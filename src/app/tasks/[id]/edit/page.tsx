@@ -14,23 +14,24 @@ export default async function EditTaskPage({ params }: { params: Promise<{ id: s
   const task = (await getTasks()).find((candidate) => candidate.id === id);
   if (!task) notFound();
 
+  const partnerName = context.partner?.display_name ?? 'Your partner';
+
   return (
-    <div className="stack">
-      <div className="stack-tight">
+    <>
+      <div className="l-stack-tight">
         <h1>Propose a change</h1>
-        <p className="muted">
-          {context.partner?.display_name} approves the change before it takes effect.
-        </p>
+        <p className="l-muted">{partnerName} approves the change before it takes effect.</p>
       </div>
-      <div className="card">
+      <div className="l-panel">
         <TaskForm
           action={proposeTaskEditAction}
           taskId={task.id}
           initial={task}
           submitLabel="Send the change"
           today={context.today}
+          partnerName={partnerName}
         />
       </div>
-    </div>
+    </>
   );
 }

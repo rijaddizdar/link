@@ -53,7 +53,7 @@ export async function getCoupleContext(session: Session): Promise<CoupleContext 
 
   const { data: couples } = await supabase
     .from('couples')
-    .select('id, time_zone, unlinked_at, unlinked_by, purge_after')
+    .select('id, time_zone, day_end_time, unlinked_at, unlinked_by, purge_after')
     .order('created_at', { ascending: false });
 
   const couple = couples?.[0];

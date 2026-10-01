@@ -5,50 +5,77 @@ import { usePathname } from 'next/navigation';
 import { signOut } from '@/lib/actions';
 import { SubmitButton } from './SubmitButton';
 
+/**
+ * The app frame: a top bar, and the navigation that is a bottom tab bar on a
+ * phone and a left sidebar on a laptop. Phone and desktop share one component
+ * set — the desktop is the same screens with room around them.
+ */
 export function Nav({
   signedIn,
   linked,
   waitingOnMe,
+  children,
 }: {
   signedIn: boolean;
   linked: boolean;
   waitingOnMe: number;
+  children: React.ReactNode;
 }) {
   const pathname = usePathname();
 
-  const links = linked
+  const tabs = linked
     ? [
-        { href: '/', label: 'Today' },
-        { href: '/tasks', label: 'Tasks' },
-        { href: '/proposals', label: 'Approvals', badge: waitingOnMe },
-        { href: '/settings', label: 'Settings' },
+        { href: '/', label: 'Today', icon: '⌂' },
+        { href: '/tasks', label: 'Tasks', icon: '☰' },
+        { href: '/proposals', label: 'Approvals', icon: '✓', badge: waitingOnMe },
+        { href: '/settings', label: 'Settings', icon: '⚙' },
+        // 'Us' is in the design on every screen but its contents are still an
+        // open captain decision, so it is a placeholder until that is settled.
+        { href: '#', label: 'Us', icon: '♡', placeholder: true },
       ]
     : [];
 
   return (
-    <header className="topbar">
-      <Link href="/" className="brand">
-        <span aria-hidden="true">💞</span> Link
-      </Link>
-
-      <nav className="nav" aria-label="Main">
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="nav-link"
-            aria-current={pathname === link.href ? 'page' : undefined}
-          >
-            {link.label}
-            {link.badge ? <span className="nav-badge">{link.badge}</span> : null}
-          </Link>
-        ))}
+    <div className="l-app">
+      <header className="l-topbar">
+        <Link href="/" className="l-wordmark">
+          <span className="l-wordmark-mark" aria-hidden="true">
+            ♥
+          </span>
+          Link
+        </Link>
         {signedIn && (
           <form action={signOut}>
-            <SubmitButton className="btn btn-quiet btn-small">Sign out</SubmitButton>
+            <SubmitButton className="l-btn l-btn-quiet l-btn-small">Sign out</SubmitButton>
           </form>
         )}
-      </nav>
-    </header>
+      </header>
+
+      {tabs.length > 0 && (
+        <nav className="l-tabs" aria-label="Main">
+          {tabs.map((tab) =>
+            tab.placeholder ? (
+              <span key={tab.label} className="l-tab l-tab-disabled" aria-disabled="true">
+                <span aria-hidden="true">{tab.icon}</span>
+                {tab.label}
+              </span>
+            ) : (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className="l-tab"
+                aria-current={pathname === tab.href ? 'page' : undefined}
+              >
+                <span aria-hidden="true">{tab.icon}</span>
+                {tab.label}
+                {tab.badge ? ` (${tab.badge})` : ''}
+              </Link>
+            ),
+          )}
+        </nav>
+      )}
+
+      <main className={tabs.length > 0 ? 'l-main l-main-tabbed' : 'l-main'}>{children}</main>
+    </div>
   );
 }

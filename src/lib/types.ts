@@ -15,7 +15,8 @@ export type TaskColor = (typeof TASK_COLORS)[number];
 
 export type ScheduleKind = 'daily' | 'weekdays' | 'once';
 
-export type ProposalKind = 'create' | 'edit' | 'delete';
+/** 'day_end' is the couple's shared end-of-day time, not a task. */
+export type ProposalKind = 'create' | 'edit' | 'delete' | 'day_end';
 
 export type ProposalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'expired';
 
@@ -61,7 +62,8 @@ export type TaskProposal = {
   couple_id: string;
   task_id: string | null;
   kind: ProposalKind;
-  payload: Partial<TaskDraft>;
+  /** Task fields for create/edit; `{ day_end_time }` for a 'day_end' proposal. */
+  payload: Partial<TaskDraft> & { day_end_time?: string };
   note: string;
   proposed_by: string;
   created_at: string;
@@ -88,6 +90,8 @@ export type Profile = {
 export type Couple = {
   id: string;
   time_zone: string;
+  /** "HH:MM:SS" — the one time both partners agreed a day closes. */
+  day_end_time: string;
   unlinked_at: string | null;
   unlinked_by: string | null;
   purge_after: string | null;

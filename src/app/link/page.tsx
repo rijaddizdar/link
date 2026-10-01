@@ -21,15 +21,12 @@ export default async function LinkPage() {
     .order('created_at', { ascending: false })
     .limit(1);
 
-  const activeCode = codes?.[0] ?? null;
-  const unlinkedCouple =
-    context && context.couple.unlinked_at !== null ? context.couple : null;
-
   return (
     <LinkPanels
-      activeCode={activeCode}
+      activeCode={codes?.[0] ?? null}
       currentTimeZone={context?.couple.time_zone ?? null}
-      unlinkedCouple={unlinkedCouple}
+      currentDayEndTime={context?.couple.day_end_time ?? null}
+      unlinkedCouple={context && context.couple.unlinked_at !== null ? context.couple : null}
     />
   );
 }

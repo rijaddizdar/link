@@ -17,18 +17,18 @@ export function AuthForms() {
   const isSignUp = mode === 'signup';
 
   return (
-    <div className="card card-accent stack">
-      <div className="check-row">
+    <div className="l-panel l-stack">
+      <div className="l-row">
         <button
           type="button"
-          className={isSignUp ? 'btn btn-small' : 'btn btn-quiet btn-small'}
+          className={isSignUp ? 'l-btn l-btn-small' : 'l-btn l-btn-quiet l-btn-small'}
           onClick={() => setMode('signup')}
         >
           Create account
         </button>
         <button
           type="button"
-          className={!isSignUp ? 'btn btn-small' : 'btn btn-quiet btn-small'}
+          className={!isSignUp ? 'l-btn l-btn-small' : 'l-btn l-btn-quiet l-btn-small'}
           onClick={() => setMode('signin')}
         >
           Sign in
@@ -36,7 +36,7 @@ export function AuthForms() {
       </div>
 
       {isSignUp ? (
-        <form action={signUpAction} className="stack" key="signup">
+        <form action={signUpAction} className="l-stack" key="signup">
           <FormError message={signUpState.error} />
           <div>
             <label htmlFor="display_name">Your name</label>
@@ -60,7 +60,7 @@ export function AuthForms() {
           <SubmitButton pendingLabel="Creating…">Create account</SubmitButton>
         </form>
       ) : (
-        <form action={signInAction} className="stack" key="signin">
+        <form action={signInAction} className="l-stack" key="signin">
           <FormError message={signInState.error} />
           <div>
             <label htmlFor="si-email">Email</label>

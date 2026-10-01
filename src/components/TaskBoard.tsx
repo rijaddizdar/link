@@ -1,43 +1,18 @@
+import Link from 'next/link';
 import { CompletionControl } from './CompletionControl';
-import { isDone, requiredCount, scheduleLabel } from '@/lib/schedule';
-import { WEEKDAY_LABELS, type Profile, type TaskCompletion, type TaskWithProgress } from '@/lib/types';
-
-/** Read-only summary of one partner's progress on a task for the day. */
-function Progress({
-  completion,
-  target,
-}: {
-  completion: TaskCompletion | null;
-  target: number | null;
-}) {
-  const logged = completion?.count ?? 0;
-  const done = isDone({ target_count: target }, completion);
-
-  if (target == null) {
-    return (
-      <span className="side-state">
-        {done ? <span className="done-mark">✓ Done</span> : 'Not yet'}
-      </span>
-    );
-  }
-
-  return (
-    <span className="side-state">
-      {logged} / {requiredCount({ target_count: target })}
-      {done && (
-        <>
-          {' '}
-          <span className="done-mark">✓</span>
-        </>
-      )}
-    </span>
-  );
-}
+import { PartnerProgress } from './PartnerProgress';
+import { scheduleLabel } from '@/lib/schedule';
+import { WEEKDAY_LABELS, type Profile, type TaskWithProgress } from '@/lib/types';
 
 /**
- * The shared list for one day. Each task shows my log and my partner's log in
- * two fixed columns, so "how did we each do" is answered without scrolling
- * sideways or switching screens.
+ * The shared list for one day.
+ *
+ * Every row is one task on a `minmax(0,1fr) box box` grid, so the two completion
+ * columns are the same width and vertically aligned all the way down. That
+ * alignment is the whole point: "mine next to theirs" has to read at a glance,
+ * on a phone as much as on a laptop.
+ *
+ * Rose is always me. Violet is always my partner.
  */
 export function TaskBoard({
   items,
@@ -50,61 +25,67 @@ export function TaskBoard({
   partner: Profile | null;
   localDate: string;
 }) {
+  const partnerName = partner?.display_name || 'Your partner';
+
   if (items.length === 0) {
     return (
-      <div className="empty">
+      <div className="l-empty">
         <p>Nothing is scheduled for this day yet.</p>
-        <p className="muted">Add a task and your partner can approve it.</p>
+        <p className="l-muted">Add a task and your partner can approve it.</p>
       </div>
     );
   }
 
   return (
-    <ul className="stack" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-      {items.map(({ task, mine, theirs }) => (
-        <li
-          key={task.id}
-          className="task-card"
-          style={{ ['--task-accent' as string]: `var(--task-${task.color})` }}
-        >
-          <div className="task-head">
-            <span className="task-emoji" aria-hidden="true">
-              {task.emoji}
-            </span>
-            <div className="stack-tight" style={{ minWidth: 0, flex: 1 }}>
-              <span className="task-title">{task.title}</span>
-              <div className="row">
-                <span className="chip">{scheduleLabel(task, WEEKDAY_LABELS)}</span>
-                {task.target_count != null && (
-                  <span className="chip">Target {task.target_count}</span>
-                )}
+    <div className="l-stack-tight">
+      <div className="l-list-head">
+        <span className="l-label">
+          {items.length} {items.length === 1 ? 'task' : 'tasks'} today
+        </span>
+        <span className="l-who l-who-mine">
+          <span className="l-who-dot" aria-hidden="true" />
+          You
+        </span>
+        <span className="l-who l-who-theirs">
+          <span className="l-who-dot" aria-hidden="true" />
+          {partnerName}
+        </span>
+      </div>
+
+      <ul className="l-list">
+        {items.map(({ task, mine, theirs }) => (
+          <li key={task.id} className="l-task" data-testid="task-row">
+            <div className="l-task-body">
+              <div className="l-task-title">
+                <span
+                  className="l-task-colour"
+                  style={{ ['--task-colour' as string]: `var(--task-${task.color})` }}
+                  aria-hidden="true"
+                />
+                <span aria-hidden="true">{task.emoji} </span>
+                {task.title}
               </div>
-              {task.description && <p className="muted">{task.description}</p>}
-            </div>
-          </div>
-
-          <div className="side-by-side">
-            <div className="side side-mine">
-              <span className="side-who">{me.display_name || 'You'} (you)</span>
-              <Progress completion={mine} target={task.target_count} />
-              <CompletionControl task={task} completion={mine} localDate={localDate} />
+              <div className="l-task-meta">
+                {task.target_count == null
+                  ? scheduleLabel(task, WEEKDAY_LABELS)
+                  : `Counter · target ${task.target_count} a day · ${scheduleLabel(task, WEEKDAY_LABELS)}`}
+              </div>
+              {task.description && <p className="l-task-note">{task.description}</p>}
             </div>
 
-            <div className="side side-theirs">
-              <span className="side-who">{partner?.display_name || 'Your partner'}</span>
-              <Progress completion={theirs} target={task.target_count} />
-              <span className="muted">
-                {theirs
-                  ? `Logged ${new Date(theirs.completed_at).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}`
-                  : 'Nothing logged yet'}
-              </span>
-            </div>
-          </div>
-        </li>
-      ))}
-    </ul>
+            <CompletionControl task={task} completion={mine} localDate={localDate} />
+            <PartnerProgress task={task} completion={theirs} partnerName={partnerName} />
+          </li>
+        ))}
+      </ul>
+
+      <Link href="/tasks/new" className="l-add-task">
+        <span aria-hidden="true">+</span> Add a task
+      </Link>
+
+      <span className="l-visually-hidden">
+        {me.display_name || 'You'} and {partnerName} each log their own day.
+      </span>
+    </div>
   );
 }

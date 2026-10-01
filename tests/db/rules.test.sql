@@ -71,7 +71,7 @@ select pg_temp.check(
 select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
 
 create temporary table t_code as
-  select (public.generate_invite_code('Europe/Berlin')).code as code;
+  select (public.generate_invite_code('Europe/Berlin', '21:30')).code as code;
 
 select pg_temp.check(
   'the code uses the unambiguous 8-character alphabet',
@@ -111,6 +111,11 @@ select pg_temp.check(
 select pg_temp.check(
   'the couple time zone is the one set at linking',
   (select time_zone from public.couples where id = public.current_couple_id()) = 'Europe/Berlin'
+);
+
+select pg_temp.check(
+  'the end-of-day time agreed at linking is the couple time',
+  (select day_end_time from public.couples where id = public.current_couple_id()) = '21:30'::time
 );
 
 select pg_temp.expect_error(
@@ -285,6 +290,66 @@ select pg_temp.check(
   'a declined removal leaves the task on the list',
   (select archived_at is null from public.tasks where id = (select id from t_task))
 );
+
+-- --- the shared end-of-day time ---------------------------------------------
+
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.expect_error(
+  'the end-of-day time cannot be changed by writing to the table',
+  format('update public.couples set day_end_time = ''06:00'' where id = %L',
+         public.current_couple_id())
+);
+
+-- Two statements: the update has to land before the value is read back.
+update public.couples set time_zone = 'Europe/Madrid' where id = public.current_couple_id();
+select pg_temp.check(
+  'the time zone is still directly editable',
+  (select time_zone from public.couples where id = public.current_couple_id()) = 'Europe/Madrid'
+);
+
+create temporary table t_dayend as
+  select (public.propose_day_end_time('22:15', 'later for me')).id as id;
+
+select pg_temp.check(
+  'proposing a new end-of-day time does not change it yet',
+  (select day_end_time from public.couples where id = public.current_couple_id()) = '21:30'::time
+);
+
+select pg_temp.expect_error(
+  'you cannot approve your own end-of-day change',
+  format('select public.approve_proposal(%L)', (select id from t_dayend))
+);
+
+select pg_temp.expect_error(
+  'only one end-of-day change can wait at a time',
+  'select public.propose_day_end_time(''23:00'')'
+);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
+select public.approve_proposal((select id from t_dayend));
+
+select pg_temp.check(
+  'approving the change moves the end-of-day time for both of them',
+  (select day_end_time from public.couples where id = public.current_couple_id()) = '22:15'::time
+);
+
+select pg_temp.expect_error(
+  'proposing the time it already is is refused',
+  'select public.propose_day_end_time(''22:15'')'
+);
+
+-- A declined change leaves the time alone.
+create temporary table t_dayend2 as
+  select (public.propose_day_end_time('02:00')).id as id;
+select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
+select public.reject_proposal((select id from t_dayend2));
+select pg_temp.check(
+  'a declined end-of-day change leaves the time where it was',
+  (select day_end_time from public.couples where id = public.current_couple_id()) = '22:15'::time
+);
+
+select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
 
 -- --- completion logging -----------------------------------------------------
 

@@ -27,13 +27,17 @@ test('two partners link, agree a task, and each log their own day', async ({ bro
   // code is made — a hydration mismatch here used to reset it to the first zone
   // in the alphabet.
   await expect(alex.getByLabel('Your shared time zone')).toHaveValue('Europe/Berlin');
-  await alex.getByRole('button', { name: 'Get our code' }).click();
+
+  // Step 2 of linking: the couple agrees one shared end-of-day time.
+  await alex.getByLabel('The time your day closes').fill('22:30');
+  await alex.getByRole('button', { name: 'Start our list' }).click();
+
   const code = (await alex.getByTestId('invite-code').innerText()).trim();
   expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
   await expect(alex.getByLabel('Your shared time zone')).toHaveValue('Europe/Berlin');
 
   // Sam cannot use a code that is not theirs to use — their own, for instance.
-  await sam.getByRole('button', { name: 'Get our code' }).click();
+  await sam.getByRole('button', { name: 'Start our list' }).click();
   const samOwnCode = (await sam.getByTestId('invite-code').innerText()).trim();
   await sam.getByLabel('Their code').fill(samOwnCode);
   await sam.getByRole('button', { name: 'Link us up' }).click();
@@ -44,17 +48,19 @@ test('two partners link, agree a task, and each log their own day', async ({ bro
   await sam.getByRole('button', { name: 'Link us up' }).click();
   await expect(sam.getByRole('heading', { name: 'Today' })).toBeVisible();
   await expect(sam.getByText('Alex')).toBeVisible();
-  // The zone chosen at linking becomes the couple's shared zone.
+  // The zone and the end-of-day time chosen at linking are now the couple's.
   await expect(sam.getByText('Europe/Berlin')).toBeVisible();
+  await expect(sam.getByText('Day ends at')).toContainText('10:30 PM');
 
   // --- one partner proposes a task -----------------------------------------
   await alex.goto('/tasks/new');
-  await alex.getByLabel('Title').fill('Drink water');
+  await alex.getByLabel('Name').fill('Drink water');
   await alex.getByLabel('Notes (optional)').fill('Eight glasses between us both.');
   await alex.getByRole('radio', { name: 'plum' }).check();
-  await alex.getByLabel('Count up to a number').check();
-  await alex.getByLabel('Done when we reach').fill('3');
-  await alex.getByRole('button', { name: 'Send to my partner' }).click();
+  // A counter always has a target: picking "Count it" reveals it and requires it.
+  await alex.getByText('Count it').click();
+  await alex.getByLabel('Target for the day').fill('3');
+  await alex.getByRole('button', { name: 'Send to Sam' }).click();
 
   await expect(alex.getByText('Sam can approve it now')).toBeVisible();
 
@@ -75,44 +81,43 @@ test('two partners link, agree a task, and each log their own day', async ({ bro
 
   // --- both log their own completion ---------------------------------------
   await sam.goto('/');
-  const samCard = sam.locator('.task-card', { hasText: 'Drink water' });
-  await expect(samCard).toBeVisible();
+  const samRow = sam.locator('[data-testid="task-row"]', { hasText: 'Drink water' });
+  await expect(samRow).toBeVisible();
 
-  const samMine = samCard.locator('.side-mine');
-  await samMine.getByRole('button', { name: /One more for Drink water/ }).click();
-  await expect(samMine).toContainText('1 / 3');
-  await samMine.getByRole('button', { name: /One more for Drink water/ }).click();
-  await expect(samMine).toContainText('2 / 3');
+  const samMine = samRow.locator('.l-box-mine');
+  for (let i = 0; i < 2; i += 1) {
+    await samRow.getByRole('button', { name: /One more for Drink water/ }).click();
+    await expect(samMine).toContainText(`${i + 1}`);
+  }
 
   await alex.goto('/');
-  const alexCard = alex.locator('.task-card', { hasText: 'Drink water' });
-  const alexMine = alexCard.locator('.side-mine');
+  const alexRow = alex.locator('[data-testid="task-row"]', { hasText: 'Drink water' });
+  const alexMine = alexRow.locator('.l-box-mine');
   for (let i = 0; i < 3; i += 1) {
-    await alexMine.getByRole('button', { name: /One more for Drink water/ }).click();
-    await expect(alexMine).toContainText(`${i + 1} / 3`);
+    await alexRow.getByRole('button', { name: /One more for Drink water/ }).click();
+    await expect(alexMine).toContainText(`${i + 1}`);
   }
 
   // --- the side-by-side view shows both ------------------------------------
-  // Alex finished; Sam is on 2 of 3. Each sees their own column next to the other's.
+  // Alex finished; Sam is on 2 of 3. Each reads their own column (rose) next to
+  // their partner's (violet), in the same two positions on both screens.
   await alex.reload();
-  const alexMineFinal = alexCard.locator('.side-mine');
-  const alexTheirs = alexCard.locator('.side-theirs');
-  await expect(alexMineFinal).toContainText('Alex (you)');
-  await expect(alexMineFinal).toContainText('3 / 3');
-  await expect(alexTheirs).toContainText('Sam');
-  await expect(alexTheirs).toContainText('2 / 3');
+  await expect(alexRow.locator('.l-box-mine')).toContainText('3');
+  await expect(alexRow.locator('.l-box-mine')).toHaveClass(/l-box-done/);
+  await expect(alexRow.locator('.l-box-theirs')).toContainText('2');
+  await expect(alexRow.locator('.l-box-theirs')).not.toHaveClass(/l-box-done/);
 
   await sam.reload();
-  const samMineFinal = samCard.locator('.side-mine');
-  const samTheirs = samCard.locator('.side-theirs');
-  await expect(samMineFinal).toContainText('Sam (you)');
-  await expect(samMineFinal).toContainText('2 / 3');
-  await expect(samTheirs).toContainText('Alex');
-  await expect(samTheirs).toContainText('3 / 3');
+  await expect(samRow.locator('.l-box-mine')).toContainText('2');
+  await expect(samRow.locator('.l-box-mine')).not.toHaveClass(/l-box-done/);
+  await expect(samRow.locator('.l-box-theirs')).toContainText('3');
+  await expect(samRow.locator('.l-box-theirs')).toHaveClass(/l-box-done/);
 
-  // The same two columns, mirrored — nobody has to switch screens to compare.
-  await expect(alex.locator('.side-mine').first()).toContainText('1 of 1 done');
-  await expect(alex.locator('.side-theirs').first()).toContainText('0 of 1 done');
+  // Rose is me, violet is my partner — and the two columns line up, which is
+  // what makes the comparison readable without switching screens.
+  await expect(alex.locator('.l-who-mine').first()).toContainText('You');
+  await expect(alex.locator('.l-who-theirs').first()).toContainText('Sam');
+  await expect(sam.locator('.l-who-theirs').first()).toContainText('Alex');
 
   // --- a partner can see nothing of a couple they are not in ---------------
   const outsiderContext = await browser.newContext();
@@ -141,7 +146,7 @@ test('an edit takes effect only once the partner approves it', async ({ browser 
   await createAccount(alex, 'Alex', alexEmail);
   await createAccount(sam, 'Sam', samEmail);
 
-  await alex.getByRole('button', { name: 'Get our code' }).click();
+  await alex.getByRole('button', { name: 'Start our list' }).click();
   const code = (await alex.getByTestId('invite-code').innerText()).trim();
   await sam.getByLabel('Their code').fill(code);
   await sam.getByRole('button', { name: 'Link us up' }).click();
@@ -149,15 +154,15 @@ test('an edit takes effect only once the partner approves it', async ({ browser 
 
   // Agree a task first.
   await alex.goto('/tasks/new');
-  await alex.getByLabel('Title').fill('Morning walk');
-  await alex.getByRole('button', { name: 'Send to my partner' }).click();
+  await alex.getByLabel('Name').fill('Morning walk');
+  await alex.getByRole('button', { name: 'Send to Sam' }).click();
   await sam.goto('/proposals');
   await sam.getByRole('button', { name: 'Approve' }).click();
 
   // Sam proposes renaming it.
   await sam.goto('/tasks');
-  await sam.getByRole('link', { name: 'Propose a change' }).click();
-  await sam.getByLabel('Title').fill('Evening walk');
+  await sam.getByRole('link', { name: 'Change' }).click();
+  await sam.getByLabel('Name').fill('Evening walk');
   await sam.getByRole('button', { name: 'Send the change' }).click();
 
   // Still the old name until Alex agrees.
@@ -180,6 +185,61 @@ test('an edit takes effect only once the partner approves it', async ({ browser 
   await expect(alex.getByRole('heading', { name: 'Today' })).toBeVisible();
   await alex.goto('/tasks');
   await expect(alex.getByText('Evening walk')).toBeVisible();
+
+  await alexContext.close();
+  await samContext.close();
+});
+
+/**
+ * The shared end-of-day time is agreed at linking, and moving it afterwards goes
+ * through the same approval flow as a task change — it changes the day for both
+ * partners at once, so neither can do it alone.
+ */
+test('the end-of-day time is agreed at linking and only moves when both agree', async ({
+  browser,
+}) => {
+  const alexContext = await browser.newContext();
+  const samContext = await browser.newContext();
+  const alex = await alexContext.newPage();
+  const sam = await samContext.newPage();
+
+  await createAccount(alex, 'Alex', uniqueEmail('alex-day'));
+  await createAccount(sam, 'Sam', uniqueEmail('sam-day'));
+
+  await alex.getByLabel('The time your day closes').fill('20:00');
+  await alex.getByRole('button', { name: 'Start our list' }).click();
+  const code = (await alex.getByTestId('invite-code').innerText()).trim();
+
+  await sam.getByLabel('Their code').fill(code);
+  await sam.getByRole('button', { name: 'Link us up' }).click();
+  await expect(sam.getByRole('heading', { name: 'Today' })).toBeVisible();
+
+  // Both see the time agreed during setup.
+  await expect(sam.getByText('Day ends at')).toContainText('8:00 PM');
+  await alex.goto('/');
+  await expect(alex.getByText('Day ends at')).toContainText('8:00 PM');
+
+  // Sam proposes moving it.
+  await sam.goto('/settings');
+  await sam.getByLabel('Propose a new time').fill('22:00');
+  await sam.getByRole('button', { name: 'Send to Alex' }).click();
+  await expect(sam.getByText('Alex can approve it now')).toBeVisible();
+
+  // Nothing has moved yet, and Sam cannot wave it through.
+  await sam.goto('/');
+  await expect(sam.getByText('Day ends at')).toContainText('8:00 PM');
+  await sam.goto('/proposals');
+  await expect(sam.getByRole('button', { name: 'Approve' })).toHaveCount(0);
+
+  // Alex approves, and it moves for both.
+  await alex.goto('/proposals');
+  await expect(alex.getByText('wants to move when your day ends')).toBeVisible();
+  await alex.getByRole('button', { name: 'Approve' }).click();
+
+  await alex.goto('/');
+  await expect(alex.getByText('Day ends at')).toContainText('10:00 PM');
+  await sam.goto('/');
+  await expect(sam.getByText('Day ends at')).toContainText('10:00 PM');
 
   await alexContext.close();
   await samContext.close();

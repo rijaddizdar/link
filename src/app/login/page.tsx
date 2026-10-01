@@ -7,15 +7,18 @@ export default async function LoginPage() {
   if (session) redirect('/');
 
   return (
-    <div className="stack">
-      <div className="stack-tight">
+    <>
+      <div className="l-banner">
+        <span aria-hidden="true" style={{ fontSize: 'var(--fs-xl)' }}>
+          ♥
+        </span>
         <h1>Two people, one list</h1>
-        <p className="muted">
-          Make an account, then link up with your partner using a code. You each log your own
-          days, side by side.
+        <p>
+          Make an account, link up with your partner using a code, and each log your own day —
+          yours next to theirs.
         </p>
       </div>
       <AuthForms />
-    </div>
+    </>
   );
 }

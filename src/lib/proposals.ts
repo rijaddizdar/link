@@ -96,6 +96,7 @@ export const PROPOSAL_KIND_LABELS: Record<ProposalKind, string> = {
   create: 'wants to add',
   edit: 'wants to change',
   delete: 'wants to remove',
+  day_end: 'wants to move when your day ends',
 };
 
 export const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {

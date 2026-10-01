@@ -13,12 +13,7 @@ type Props = {
 };
 
 /** A submit button that disables itself while its form is in flight. */
-export function SubmitButton({
-  children,
-  className = 'btn',
-  pendingLabel,
-  ...rest
-}: Props) {
+export function SubmitButton({ children, className = 'l-btn', pendingLabel, ...rest }: Props) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" className={className} disabled={pending} {...rest}>

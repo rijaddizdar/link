@@ -10,22 +10,24 @@ export default async function NewTaskPage() {
   const context = await getCoupleContext(session);
   if (!isLinked(context) || !context) redirect('/link');
 
+  const partnerName = context.partner?.display_name ?? 'Your partner';
+
   return (
-    <div className="stack">
-      <div className="stack-tight">
-        <h1>Add a task</h1>
-        <p className="muted">
-          {context.partner?.display_name} sees this as a suggestion and approves it before it
-          joins your list.
+    <>
+      <div className="l-stack-tight">
+        <h1>New task</h1>
+        <p className="l-muted">
+          {partnerName} sees this as a suggestion and approves it before it joins your list.
         </p>
       </div>
-      <div className="card">
+      <div className="l-panel">
         <TaskForm
           action={proposeTaskAction}
-          submitLabel="Send to my partner"
+          submitLabel={`Send to ${partnerName}`}
           today={context.today}
+          partnerName={partnerName}
         />
       </div>
-    </div>
+    </>
   );
 }

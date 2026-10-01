@@ -10,7 +10,9 @@ create extension if not exists "pgcrypto";
 -- ---------------------------------------------------------------------------
 
 create type public.schedule_kind as enum ('daily', 'weekdays', 'once');
-create type public.proposal_kind as enum ('create', 'edit', 'delete');
+-- 'day_end' is not about a task: it is the couple's shared end-of-day time, which
+-- also only changes when both partners agree.
+create type public.proposal_kind as enum ('create', 'edit', 'delete', 'day_end');
 create type public.proposal_status as enum ('pending', 'approved', 'rejected', 'cancelled', 'expired');
 
 -- ---------------------------------------------------------------------------
@@ -44,6 +46,9 @@ create table public.couples (
   id                 uuid primary key default gen_random_uuid(),
   -- IANA time zone shared by the couple; fixes which calendar day a completion lands on.
   time_zone          text not null,
+  -- The one time of day both partners agree a day closes. Agreed during linking
+  -- setup; changing it later needs both partners, via the approval flow.
+  day_end_time       time not null default '21:00',
   created_at         timestamptz not null default now(),
   unlinked_at        timestamptz,
   unlinked_by        uuid references auth.users (id) on delete set null,
@@ -136,6 +141,7 @@ create table public.task_proposals (
   constraint task_proposals_task_ref check (
     case kind
       when 'create' then status = 'approved' or task_id is null
+      when 'day_end' then task_id is null
       else task_id is not null
     end
   ),
@@ -150,6 +156,12 @@ create table public.task_proposals (
 create unique index task_proposals_one_pending_per_task
   on public.task_proposals (task_id)
   where status = 'pending' and task_id is not null;
+
+-- Likewise one open end-of-day change at a time, which the index above cannot
+-- cover because a 'day_end' proposal names no task.
+create unique index task_proposals_one_pending_day_end
+  on public.task_proposals (couple_id)
+  where status = 'pending' and kind = 'day_end';
 
 create index task_proposals_couple_status_idx on public.task_proposals (couple_id, status);
 
@@ -347,6 +359,12 @@ begin
       raise exception 'unlink state can only change through request_unlink()/restore_link()'
         using errcode = 'P0001';
     end if;
+    -- The end-of-day time belongs to both partners, so it only moves through the
+    -- approval flow. The time zone stays directly editable.
+    if new.day_end_time is distinct from old.day_end_time then
+      raise exception 'the end-of-day time changes only when you both agree — use propose_day_end_time()'
+        using errcode = 'P0001';
+    end if;
   end if;
   return new;
 end;
@@ -455,7 +473,7 @@ $$;
 
 -- Creates the couple (with the shared time zone) on first call and returns a
 -- fresh code, revoking any code the caller had outstanding.
-create or replace function public.generate_invite_code(p_time_zone text)
+create or replace function public.generate_invite_code(p_time_zone text, p_day_end_time time default '21:00')
 returns public.invite_codes
 language plpgsql
 volatile
@@ -478,7 +496,9 @@ begin
   v_couple := public.current_couple_id();
 
   if v_couple is null then
-    insert into public.couples (time_zone) values (p_time_zone) returning id into v_couple;
+    insert into public.couples (time_zone, day_end_time)
+    values (p_time_zone, coalesce(p_day_end_time, '21:00'))
+    returning id into v_couple;
     insert into public.couple_members (couple_id, user_id) values (v_couple, v_uid);
   else
     select count(*) into v_members
@@ -489,7 +509,12 @@ begin
       raise exception 'you are already linked with a partner' using errcode = 'P0001';
     end if;
 
-    update public.couples set time_zone = p_time_zone where id = v_couple;
+    -- Still setting up alone, so the agreed time is whatever this partner picks.
+    -- Once there are two of them the guard trigger sends changes through approval.
+    update public.couples
+      set time_zone = p_time_zone,
+          day_end_time = coalesce(p_day_end_time, day_end_time)
+      where id = v_couple;
   end if;
 
   update public.invite_codes
@@ -506,7 +531,7 @@ $$;
 
 -- What the person entering a code is allowed to learn before committing.
 create or replace function public.peek_invite_code(p_code text)
-returns table (display_name text, time_zone text)
+returns table (display_name text, time_zone text, day_end_time time)
 language plpgsql
 stable
 security definer
@@ -516,7 +541,7 @@ declare
   v_code text := upper(regexp_replace(coalesce(p_code, ''), '[^A-Za-z0-9]', '', 'g'));
 begin
   return query
-  select p.display_name, c.time_zone
+  select p.display_name, c.time_zone, c.day_end_time
   from public.invite_codes ic
   join public.couples c on c.id = ic.couple_id
   join public.profiles p on p.id = ic.created_by
@@ -891,6 +916,43 @@ exception
 end;
 $$;
 
+-- The couple's shared end-of-day time. It is agreed during linking setup; moving
+-- it afterwards goes through the same approval flow as a task change, because it
+-- changes the day for both partners at once.
+create or replace function public.propose_day_end_time(p_day_end_time time, p_note text default '')
+returns public.task_proposals
+language plpgsql
+volatile
+security definer
+set search_path = public, pg_catalog
+as $$
+declare
+  v_couple uuid := public.require_couple();
+  v_row public.task_proposals;
+begin
+  perform public.expire_stale_proposals();
+
+  if p_day_end_time is null then
+    raise exception 'pick a time for the day to end' using errcode = 'P0001';
+  end if;
+  if p_day_end_time = (select c.day_end_time from public.couples c where c.id = v_couple) then
+    raise exception 'that is already when your day ends' using errcode = 'P0001';
+  end if;
+
+  insert into public.task_proposals (couple_id, kind, payload, note, proposed_by, expires_at)
+  values (
+    v_couple, 'day_end', jsonb_build_object('day_end_time', to_char(p_day_end_time, 'HH24:MI')),
+    left(coalesce(p_note, ''), 500), auth.uid(), now() + public.proposal_ttl()
+  )
+  returning * into v_row;
+
+  return v_row;
+exception
+  when unique_violation then
+    raise exception 'an end-of-day change is already waiting for approval' using errcode = 'P0001';
+end;
+$$;
+
 -- Loads a pending proposal the caller is entitled to answer. p_as_proposer picks
 -- which side of the proposal the caller must be on.
 create or replace function public.lock_pending_proposal(p_id uuid, p_as_proposer boolean)
@@ -976,6 +1038,11 @@ begin
       due_date      = nullif(v_payload ->> 'due_date', '')::date,
       target_count  = nullif(v_payload ->> 'target_count', '')::integer
     where id = v_p.task_id;
+
+  elsif v_p.kind = 'day_end' then
+    update public.couples
+      set day_end_time = (v_payload ->> 'day_end_time')::time
+      where id = v_p.couple_id;
 
   elsif v_p.kind = 'delete' then
     -- Archived rather than removed, so completion history stays intact for the
@@ -1080,7 +1147,7 @@ grant execute on function public.current_couple_id()                      to aut
 grant execute on function public.couple_local_date(uuid, timestamptz)     to authenticated;
 grant execute on function public.partner_id(uuid)                        to authenticated;
 grant execute on function public.require_couple()                        to authenticated;
-grant execute on function public.generate_invite_code(text)              to authenticated;
+grant execute on function public.generate_invite_code(text, time)        to authenticated;
 grant execute on function public.peek_invite_code(text)                  to authenticated;
 grant execute on function public.redeem_invite_code(text)                to authenticated;
 grant execute on function public.request_unlink()                        to authenticated;
@@ -1089,6 +1156,7 @@ grant execute on function public.expire_stale_proposals()                to auth
 grant execute on function public.propose_task(jsonb, text)               to authenticated;
 grant execute on function public.propose_task_edit(uuid, jsonb, text)    to authenticated;
 grant execute on function public.propose_task_delete(uuid, text)         to authenticated;
+grant execute on function public.propose_day_end_time(time, text)        to authenticated;
 grant execute on function public.approve_proposal(uuid)                  to authenticated;
 grant execute on function public.reject_proposal(uuid)                   to authenticated;
 grant execute on function public.cancel_proposal(uuid)                   to authenticated;

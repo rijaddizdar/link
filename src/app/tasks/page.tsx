@@ -20,59 +20,62 @@ export default async function TasksPage() {
   );
 
   return (
-    <div className="stack">
-      <div className="spread">
-        <div className="stack-tight">
+    <>
+      <div className="l-spread">
+        <div className="l-stack-tight">
           <h1>Our tasks</h1>
-          <p className="muted">{tasks.length} on the list. Add as many as you like.</p>
+          <p className="l-muted">{tasks.length} on the list. Add as many as you like.</p>
         </div>
-        <Link href="/tasks/new" className="btn">
+        <Link href="/tasks/new" className="l-btn">
           Add a task
         </Link>
       </div>
 
       {tasks.length === 0 ? (
-        <div className="empty">
+        <div className="l-empty">
           <p>Your list is empty.</p>
-          <p className="muted">
+          <p className="l-muted">
             Whatever you add goes to {context.partner?.display_name} to approve first.
           </p>
         </div>
       ) : (
-        <ul className="stack" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        <ul className="l-list">
           {tasks.map((task) => {
             const locked = lockedTaskIds.has(task.id);
             return (
               <li
                 key={task.id}
-                className="task-card"
-                style={{ ['--task-accent' as string]: `var(--task-${task.color})` }}
+                className={locked ? 'l-task l-task-pending' : 'l-task'}
+                style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}
               >
-                <div className="task-head">
-                  <span className="task-emoji" aria-hidden="true">
-                    {task.emoji}
-                  </span>
-                  <div className="stack-tight" style={{ minWidth: 0, flex: 1 }}>
-                    <span className="task-title">{task.title}</span>
-                    <div className="row">
-                      <span className="chip">{scheduleLabel(task, WEEKDAY_LABELS)}</span>
-                      {task.target_count != null && (
-                        <span className="chip">Target {task.target_count}</span>
-                      )}
-                    </div>
-                    {task.description && <p className="muted">{task.description}</p>}
+                <div className="l-task-body">
+                  <div className="l-task-title">
+                    <span
+                      className="l-task-colour"
+                      style={{ ['--task-colour' as string]: `var(--task-${task.color})` }}
+                      aria-hidden="true"
+                    />
+                    <span aria-hidden="true">{task.emoji} </span>
+                    {task.title}
                   </div>
+                  <div className="l-task-meta">
+                    {task.target_count == null
+                      ? scheduleLabel(task, WEEKDAY_LABELS)
+                      : `Counter · target ${task.target_count} a day · ${scheduleLabel(task, WEEKDAY_LABELS)}`}
+                  </div>
+                  {task.description && <p className="l-task-note">{task.description}</p>}
+                  {locked && (
+                    <p className="l-task-note">
+                      A change to this task is already waiting for approval.{' '}
+                      <Link href="/proposals">See it</Link>
+                    </p>
+                  )}
                 </div>
 
-                {locked ? (
-                  <p className="notice">
-                    A change to this task is already waiting for approval.{' '}
-                    <Link href="/proposals">See it</Link>
-                  </p>
-                ) : (
-                  <div className="row">
-                    <Link href={`/tasks/${task.id}/edit`} className="btn btn-secondary btn-small">
-                      Propose a change
+                {!locked && (
+                  <div className="l-row">
+                    <Link href={`/tasks/${task.id}/edit`} className="l-btn l-btn-quiet l-btn-small">
+                      Change
                     </Link>
                     <DeleteTaskButton taskId={task.id} title={task.title} />
                   </div>
@@ -82,6 +85,6 @@ export default async function TasksPage() {
           })}
         </ul>
       )}
-    </div>
+    </>
   );
 }

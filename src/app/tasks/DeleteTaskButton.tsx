@@ -11,16 +11,16 @@ export function DeleteTaskButton({ taskId, title }: { taskId: string; title: str
   });
 
   return (
-    <form action={action} className="row">
+    <form action={action} className="l-row">
       <input type="hidden" name="task_id" value={taskId} />
       <SubmitButton
-        className="btn btn-danger btn-small"
+        className="l-btn l-btn-danger l-btn-small"
         pendingLabel="Sending…"
         aria-label={`Propose removing ${title}`}
       >
-        Propose removal
+        Remove
       </SubmitButton>
-      {state.error && <span className="muted">{state.error}</span>}
+      {state.error && <span className="l-muted">{state.error}</span>}
     </form>
   );
 }

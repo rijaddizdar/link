@@ -1,6 +1,13 @@
 /*
- * Component styles. Every colour, font, radius and shadow here is a token from
- * tokens.css — no literal colour values below this line.
+ * Component styles for direction D · Bold Modern.
+ *
+ * Every colour, font, radius and shadow below is a token from tokens.css — there
+ * are no literal colour values in this file. Flat fills only: no gradients and
+ * no blurred shadows anywhere in D.
+ *
+ * Class names avoid the DaisyUI component names (hero, card, badge, label, link,
+ * alert, navbar, input, toggle, avatar, calendar, …) so that adding DaisyUI later
+ * cannot silently override them. Link's own components are prefixed `l-`.
  */
 
 @import './tokens.css';
@@ -18,11 +25,11 @@ body {
 }
 
 body {
-  background: var(--bg-page);
-  color: var(--text-strong);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-body);
   font-size: var(--fs-md);
-  line-height: 1.5;
+  line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -31,228 +38,349 @@ h2,
 h3 {
   font-family: var(--font-display);
   font-weight: var(--fw-bold);
-  line-height: 1.2;
+  letter-spacing: var(--display-ls);
+  line-height: 1.1;
   margin: 0;
 }
 
-h1 { font-size: var(--fs-2xl); }
-h2 { font-size: var(--fs-xl); }
-h3 { font-size: var(--fs-lg); }
+h1 { font-size: var(--fs-xl); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: var(--fs-md); }
 
 p { margin: 0; }
 
 a {
-  color: var(--accent);
+  color: var(--primary);
+  font-weight: var(--fw-semi);
   text-decoration: none;
 }
 
 a:hover { text-decoration: underline; }
 
-/* --- layout -------------------------------------------------------------- */
+/* The uppercase micro-label that sits above most blocks in D. */
+.l-label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  color: var(--muted);
+}
 
-.shell {
+.l-muted {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* --- app frame ----------------------------------------------------------- */
+
+.l-app {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.l-main {
+  width: 100%;
   max-width: var(--page-max);
   margin: 0 auto;
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.topbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: var(--space-3);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-lg);
-  color: var(--accent);
-}
-
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.nav-link {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-pill);
-  color: var(--text-soft);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-}
-
-.nav-link:hover {
-  background: var(--bg-surface-alt);
-  text-decoration: none;
-}
-
-.nav-link[aria-current='page'] {
-  background: var(--accent-soft);
-  color: var(--accent-hover);
-}
-
-.nav-badge {
-  display: inline-block;
-  min-width: 1.35em;
-  margin-left: var(--space-1);
-  padding: 0 var(--space-1);
-  border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--text-on-accent);
-  font-size: var(--fs-xs);
-  text-align: center;
-}
-
-.stack {
+  padding: var(--space-4) var(--space-4) var(--space-8);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.stack-tight {
+/* Phone: a bottom tab bar, so the main column leaves room for it. */
+.l-main-tabbed { padding-bottom: calc(var(--space-8) + 3.5rem); }
+
+.l-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  background: var(--surface);
+  border-bottom: var(--border);
+  padding: var(--space-3) var(--space-4);
+}
+
+.l-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--display-ls);
+  color: var(--ink);
+}
+
+.l-wordmark:hover { text-decoration: none; }
+.l-wordmark-mark { color: var(--primary); }
+
+/* Bottom tab bar on a phone. */
+.l-tabs {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background: var(--surface);
+  border-top: var(--border);
+  padding: var(--space-2) var(--space-1);
+  padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+}
+
+.l-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  color: var(--muted);
+  min-width: 0;
+}
+
+.l-tab:hover { text-decoration: none; }
+.l-tab[aria-current='page'] { color: var(--primary); }
+
+.l-tab-disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Desktop: the tab bar becomes a left sidebar. */
+@media (min-width: 60rem) {
+  .l-app { grid-template-columns: var(--sidebar-width) minmax(0, 1fr); }
+
+  .l-topbar {
+    grid-column: 1 / -1;
+  }
+
+  .l-tabs {
+    position: sticky;
+    inset: auto;
+    top: 0;
+    align-self: start;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    /* Without this the rows stretch to fill the viewport and the nav items end
+       up spread down the whole sidebar. */
+    align-content: start;
+    gap: var(--space-1);
+    height: 100dvh;
+    border-top: 0;
+    border-right: var(--border);
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .l-tab {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    border: var(--border-width) solid transparent;
+    border-radius: var(--btn-radius);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+
+  .l-tab[aria-current='page'] {
+    background: var(--primary);
+    border-color: var(--ink);
+    box-shadow: var(--shadow-row);
+    color: var(--primary-ink);
+  }
+
+  .l-main-tabbed { padding-bottom: var(--space-8); }
+}
+
+/* --- surfaces ------------------------------------------------------------ */
+
+.l-panel {
+  background: var(--surface);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-4);
+}
+
+.l-panel-quiet {
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+/* Full-bleed rose header. White text, so anything white dropped on it must
+   reset its own colour — see the contrast trap note in the design report. */
+.l-banner {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.l-banner h1 { color: var(--primary-ink); font-size: var(--fs-2xl); }
+.l-banner p { color: var(--primary-ink); font-size: var(--fs-sm); max-width: 24rem; }
+.l-banner .l-label { color: var(--primary-ink); }
+
+.l-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.l-stack-tight {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.row {
+.l-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
 
-.spread {
+.l-spread {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
   align-items: flex-start;
   justify-content: space-between;
+  gap: var(--space-3);
 }
 
-/* --- surfaces ------------------------------------------------------------ */
-
-.card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-4);
-}
-
-.card-accent {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
-}
-
-.muted {
-  color: var(--text-soft);
-  font-size: var(--fs-sm);
-}
-
-.empty {
-  background: var(--bg-surface-alt);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
+.l-empty {
+  background: var(--surface-2);
+  border: var(--border-width) dashed var(--ink);
+  border-radius: var(--radius);
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  color: var(--text-soft);
+  color: var(--muted);
 }
 
-.notice {
-  background: var(--bg-accent-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+.l-note {
+  background: var(--surface-2);
+  border: var(--border);
+  border-radius: var(--radius-sm);
   padding: var(--space-3);
   font-size: var(--fs-sm);
 }
 
-.error {
-  background: var(--accent-soft);
-  border: 1px solid var(--danger);
-  border-radius: var(--radius-md);
+.l-error {
+  background: var(--surface);
+  border: var(--border-width) solid var(--danger);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-row);
   padding: var(--space-3);
   color: var(--danger);
   font-size: var(--fs-sm);
+  font-weight: var(--fw-semi);
 }
+
+.l-chip {
+  display: inline-block;
+  background: var(--surface-2);
+  border: var(--border);
+  border-radius: var(--chip-radius);
+  padding: 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  color: var(--ink);
+}
+
+.l-chip-accent { background: var(--accent); }
 
 /* --- controls ------------------------------------------------------------ */
 
-.btn {
+.l-btn {
   appearance: none;
-  border: 1px solid transparent;
-  border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--text-on-accent);
-  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--primary);
+  color: var(--primary-ink);
+  border: var(--border);
+  border-radius: var(--btn-radius);
+  box-shadow: var(--shadow-btn);
+  font-family: var(--font-display);
   font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--display-ls);
   padding: var(--space-2) var(--space-4);
   cursor: pointer;
   line-height: 1.4;
 }
 
-.btn:hover { background: var(--accent-hover); }
+.l-btn:hover { text-decoration: none; transform: translate(1px, 1px); box-shadow: var(--shadow-row); }
+.l-btn:active { transform: translate(3px, 3px); box-shadow: none; }
 
-.btn:focus-visible {
+.l-btn:focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring);
+  box-shadow: var(--shadow-btn), var(--focus-ring);
 }
 
-.btn:disabled {
+.l-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+  transform: none;
 }
 
-.btn-secondary {
-  background: var(--bg-surface);
-  border-color: var(--border-strong);
-  color: var(--accent-hover);
+.l-btn-secondary {
+  background: var(--surface-2);
+  color: var(--ink);
 }
 
-.btn-secondary:hover { background: var(--bg-surface-alt); }
-
-.btn-quiet {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text-soft);
+.l-btn-quiet {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-row);
 }
 
-.btn-quiet:hover { background: var(--bg-surface-alt); }
-
-.btn-danger {
-  background: transparent;
-  border-color: var(--danger);
+.l-btn-danger {
+  background: var(--surface);
   color: var(--danger);
+  box-shadow: var(--shadow-row);
 }
 
-.btn-danger:hover {
-  background: var(--accent-soft);
-}
+.l-btn-danger:hover { background: var(--danger); color: var(--primary-ink); }
 
-.btn-small {
+.l-btn-small {
   padding: var(--space-1) var(--space-3);
   font-size: var(--fs-xs);
+  box-shadow: var(--shadow-row);
 }
+
+.l-btn-block { width: 100%; }
 
 label {
   display: block;
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-  color: var(--text-strong);
-  margin-bottom: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  color: var(--muted);
+  margin-bottom: var(--space-2);
 }
 
 input[type='text'],
@@ -260,15 +388,16 @@ input[type='email'],
 input[type='password'],
 input[type='number'],
 input[type='date'],
+input[type='time'],
 select,
 textarea {
   width: 100%;
-  font-family: inherit;
+  font-family: var(--font-body);
   font-size: var(--fs-md);
-  color: var(--text-strong);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
+  color: var(--ink);
+  background: var(--surface);
+  border: var(--border);
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
 }
 
@@ -277,219 +406,492 @@ select:focus-visible,
 textarea:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
-  border-color: var(--accent);
 }
 
 textarea { min-height: 4.5rem; resize: vertical; }
 
 fieldset {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border: var(--border);
+  border-radius: var(--radius-sm);
   padding: var(--space-3);
   margin: 0;
 }
 
 legend {
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  color: var(--muted);
   padding: 0 var(--space-2);
 }
 
-.check-row {
+.l-choices {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.check-chip {
+.l-choice {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-pill);
+  gap: var(--space-2);
+  background: var(--surface);
+  border: var(--border);
+  border-radius: var(--chip-radius);
   padding: var(--space-1) var(--space-3);
+  font-family: var(--font-body);
   font-size: var(--fs-sm);
-  font-weight: var(--fw-normal);
+  font-weight: var(--fw-medium);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
   margin-bottom: 0;
   cursor: pointer;
 }
 
-.check-chip input { accent-color: var(--accent); }
-
-.code-display {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: var(--fs-2xl);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.12em;
-  color: var(--accent-hover);
-  background: var(--bg-surface-alt);
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
-  text-align: center;
-  word-break: break-all;
+.l-choice:has(input:checked) {
+  background: var(--accent);
+  box-shadow: var(--shadow-row);
 }
 
-/* --- task board ---------------------------------------------------------- */
+.l-choice input { accent-color: var(--ink); }
 
-.task-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-left: 5px solid var(--task-accent, var(--accent));
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+.l-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+
+.l-divider::before,
+.l-divider::after {
+  content: '';
+  flex: 1;
+  height: var(--border-width);
+  background: var(--ink);
+}
+
+/* The invite code itself — the one piece of text read aloud down a phone. */
+.l-code {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  text-align: center;
+  word-break: break-all;
+  margin: var(--space-2) 0;
+}
+
+/* --- the two people ------------------------------------------------------ */
+
+.l-who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  min-width: 0;
+}
+
+.l-who-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--pill);
+  background: var(--who-colour, var(--primary));
+  flex: none;
+}
+
+.l-who-mine { color: var(--mine); --who-colour: var(--mine); }
+.l-who-theirs { color: var(--theirs); --who-colour: var(--theirs); }
+
+/* --- the shared list ----------------------------------------------------- */
+
+/*
+ * The whole point of the list: one task per row, with the two completion columns
+ * the same width and vertically aligned all the way down, so "mine next to
+ * theirs" reads at a glance without scrolling sideways.
+ */
+.l-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.l-list-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--box) var(--box);
+  gap: var(--space-2);
+  align-items: end;
+  padding: 0 var(--space-3);
+}
+
+.l-list-head > .l-who {
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.l-task {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--box) var(--box);
+  gap: var(--space-2);
+  align-items: center;
+  background: var(--surface);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-row);
+  padding: var(--space-3);
+}
+
+.l-task-pending {
+  background: var(--surface-2);
+  border-style: dashed;
+  box-shadow: none;
+  color: var(--muted);
+}
+
+.l-task-body { min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+
+/* The task's own colour, kept to a small marker so the row stays white with a
+   black outline the way D requires. */
+.l-task-colour {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: var(--pill);
+  border: var(--border);
+  background: var(--task-colour, var(--primary));
+  flex: none;
+  vertical-align: -1px;
+  margin-right: var(--space-1);
+}
+
+.l-task-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--display-ls);
+  overflow-wrap: anywhere;
+}
+
+.l-task-meta {
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  color: var(--primary);
+}
+
+.l-task-note { color: var(--muted); font-size: var(--fs-xs); }
+
+.l-add-task {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--surface-2);
+  border: var(--border-width) dashed var(--ink);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+}
+
+.l-add-task:hover { text-decoration: none; background: var(--surface); }
+
+/*
+ * Tick box and counter box share one shell so the columns stay aligned.
+ * Nothing in D is a circle: these are rounded squares.
+ */
+.l-box {
+  width: var(--box);
+  height: var(--box);
+  border: var(--border);
+  border-radius: var(--box-radius);
+  background: transparent;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  padding: 0;
+  margin: 0 auto;
+}
+
+button.l-box { cursor: pointer; }
+
+button.l-box:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Filled with that person's colour once they have done it. */
+.l-box-done {
+  background: var(--who-colour);
+  color: var(--primary-ink);
+  border-color: var(--ink);
+}
+
+.l-box-mine { --who-colour: var(--mine); }
+.l-box-theirs { --who-colour: var(--theirs); }
+
+.l-box-check { font-size: var(--fs-md); }
+
+.l-box-count { font-size: 1.02rem; color: var(--who-colour); }
+.l-box-done .l-box-count { color: var(--primary-ink); }
+
+.l-box-target {
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-medium);
+  color: var(--muted);
+}
+
+.l-box-done .l-box-target { color: var(--primary-ink); }
+
+/* My counter column needs − and + without breaking the grid, so they sit under
+   the box rather than beside it. */
+.l-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.l-counter-step {
+  appearance: none;
+  width: var(--box);
+  height: 1.25rem;
+  padding: 0;
+  background: var(--surface-2);
+  border: var(--border);
+  border-radius: var(--chip-radius);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--ink);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.l-counter-step:hover { background: var(--accent); }
+
+.l-counter-step:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.l-counter-step:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* A neutral per-person tally of the day. Not a score: no winner is declared
+   anywhere in this release. */
+.l-tally {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3);
+  background: var(--surface);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.l-tally-side { min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); align-items: center; }
+
+.l-tally-number {
+  font-family: var(--font-display);
+  font-size: var(--fs-num);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--display-ls);
+  line-height: 1;
+  color: var(--who-colour);
+}
+
+.l-tally-mine { --who-colour: var(--mine); }
+.l-tally-theirs { --who-colour: var(--theirs); }
+
+/* The putty bar that says when the day closes. */
+.l-dayend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--surface-2);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-sm);
+}
+
+.l-dayend-time {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--display-ls);
+}
+
+/* --- approvals ----------------------------------------------------------- */
+
+/* The one place lime carries a whole surface. */
+.l-approval {
+  background: var(--accent);
+  color: var(--ink);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
-.task-head {
+.l-approval .l-label { color: var(--ink); }
+
+/* A white inset on lime: reset the text colour explicitly rather than inheriting. */
+.l-approval-inset {
+  background: var(--surface);
+  color: var(--ink);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
   display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.l-mine-out {
+  background: var(--surface-2);
+  border: var(--border-width) dashed var(--ink);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  align-items: flex-start;
 }
 
-.task-emoji {
-  font-size: var(--fs-xl);
-  line-height: 1;
-}
+/* --- option cards (how do you log it?) ----------------------------------- */
 
-.task-title {
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-md);
-}
-
-.chip {
-  display: inline-block;
-  background: var(--bg-surface-alt);
-  color: var(--text-soft);
-  border-radius: var(--radius-pill);
-  padding: 0 var(--space-2);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-}
-
-/*
- * The side-by-side view: my column and my partner's column, always the same two
- * columns so the comparison reads at a glance. Stacks on a phone.
- */
-.side-by-side {
+.l-options {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--space-3);
 }
 
-@media (max-width: 30rem) {
-  .side-by-side {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.side {
+.l-option {
   min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: var(--border);
+  border-radius: var(--radius-sm);
   padding: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-}
-
-.side-mine {
-  background: var(--mine-soft);
-  border-color: var(--mine-accent);
-}
-
-.side-theirs {
-  background: var(--theirs-soft);
-  border-color: var(--theirs-accent);
-}
-
-.side-who {
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-soft);
-  overflow-wrap: anywhere;
-}
-
-.side-mine .side-who { color: var(--mine-accent); }
-.side-theirs .side-who { color: var(--theirs-accent); }
-
-.side-state {
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-medium);
-}
-
-.done-mark {
-  color: var(--ok);
-  font-weight: var(--fw-bold);
-}
-
-.meter {
-  height: var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-
-.meter-fill {
-  height: 100%;
-  background: var(--accent);
-}
-
-.side-mine .meter-fill { background: var(--mine-accent); }
-.side-theirs .meter-fill { background: var(--theirs-accent); }
-
-.counter {
-  display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.counter-value {
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--fw-bold);
-  min-width: 3.5em;
   text-align: center;
-  font-size: var(--fs-sm);
+  cursor: pointer;
+  margin-bottom: 0;
+  font-family: var(--font-body);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
 }
 
-.swatch-row {
+.l-option:has(input:checked) {
+  background: var(--accent);
+  box-shadow: var(--shadow-btn);
+}
+
+.l-option-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+}
+
+.l-option-hint { font-size: var(--fs-xs); color: var(--muted); }
+.l-option:has(input:checked) .l-option-hint { color: var(--ink); }
+
+.l-option-demo {
+  width: var(--box);
+  height: var(--box);
+  border: var(--border);
+  border-radius: var(--box-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  background: var(--surface);
+}
+
+.l-option-demo-count { background: var(--primary); color: var(--primary-ink); }
+
+.l-swatches {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.swatch {
+.l-swatch {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  gap: var(--space-2);
+  border: var(--border);
+  border-radius: var(--chip-radius);
+  background: var(--surface);
   padding: var(--space-1) var(--space-2);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
-  font-weight: var(--fw-normal);
+  font-weight: var(--fw-medium);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
   margin-bottom: 0;
   cursor: pointer;
 }
 
-.swatch-dot {
+.l-swatch:has(input:checked) { box-shadow: var(--shadow-row); }
+
+.l-swatch-dot {
   width: var(--space-4);
   height: var(--space-4);
-  border-radius: var(--radius-pill);
-  background: var(--swatch-color, var(--accent));
-  border: 1px solid var(--border);
+  border-radius: var(--pill);
+  background: var(--swatch-colour, var(--primary));
+  border: var(--border);
 }
 
-.visually-hidden {
+/* --- desktop ------------------------------------------------------------- */
+
+@media (min-width: 60rem) {
+  /* The same list with room around it, not a different design. */
+  .l-list-head,
+  .l-task {
+    grid-template-columns: minmax(0, 1fr) var(--box-desktop) var(--box-desktop);
+  }
+
+  .l-counter-step { width: var(--box); }
+}
+
+.l-visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
   overflow: hidden;
-  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
   white-space: nowrap;
 }

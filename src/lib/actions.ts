@@ -74,15 +74,40 @@ export async function generateInviteCodeAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  const timeZone =
-    String(formData.get('time_zone') ?? '').trim() || 'UTC';
+  const timeZone = String(formData.get('time_zone') ?? '').trim() || 'UTC';
+  const dayEndTime = String(formData.get('day_end_time') ?? '').trim() || '21:00';
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc('generate_invite_code', { p_time_zone: timeZone });
+  const { error } = await supabase.rpc('generate_invite_code', {
+    p_time_zone: timeZone,
+    p_day_end_time: dayEndTime,
+  });
   if (error) return fail(error, 'Could not create a code.');
 
   refreshAll();
   return ok;
+}
+
+/**
+ * Moving the shared end-of-day time needs both partners, so this goes through
+ * the same approval flow as a task change rather than writing to the couple.
+ */
+export async function proposeDayEndTimeAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const dayEndTime = String(formData.get('day_end_time') ?? '').trim();
+  if (!/^\d{2}:\d{2}/.test(dayEndTime)) return { error: 'Pick a time for the day to end.' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('propose_day_end_time', {
+    p_day_end_time: dayEndTime,
+    p_note: String(formData.get('note') ?? '').slice(0, 500),
+  });
+  if (error) return fail(error, 'Could not send that change.');
+
+  refreshAll();
+  redirect('/proposals?sent=1');
 }
 
 export async function redeemInviteCodeAction(

@@ -45,8 +45,9 @@ test('capture the main screens', async ({ browser }) => {
   await createAccount(alex, 'Alex', uniqueEmail('shot-alex'));
   await createAccount(sam, 'Sam', uniqueEmail('shot-sam'));
 
-  // Linking screen, with a code on show.
-  await alex.getByRole('button', { name: 'Get our code' }).click();
+  // Linking screen, with a code on show and the agreed end-of-day time.
+  await alex.getByLabel('The time your day closes').fill('21:00');
+  await alex.getByRole('button', { name: 'Start our list' }).click();
   await expect(alex.getByTestId('invite-code')).toBeVisible();
   await shoot(alex, '02-link-up');
 
@@ -57,21 +58,22 @@ test('capture the main screens', async ({ browser }) => {
 
   // A small but varied list, so the screens show real shapes.
   const seed = [
-    { title: 'Drink water', emoji: '💧', color: 'lilac', target: '8' },
     { title: 'Morning walk together', emoji: '🚶', color: 'coral', target: null },
-    { title: 'Read before bed', emoji: '📖', color: 'plum', target: '20' },
+    { title: 'Times we laughed', emoji: '😂', color: 'lilac', target: '5' },
+    { title: 'Glasses of water', emoji: '💧', color: 'mint', target: '8' },
+    { title: 'Read before bed', emoji: '📖', color: 'plum', target: null },
   ];
 
   for (const item of seed) {
     await alex.goto('/tasks/new');
-    await alex.getByLabel('Title').fill(item.title);
+    await alex.getByLabel('Name').fill(item.title);
     await alex.getByLabel('Emoji').fill(item.emoji);
     await alex.getByRole('radio', { name: item.color }).check();
     if (item.target) {
-      await alex.getByLabel('Count up to a number').check();
-      await alex.getByLabel('Done when we reach').fill(item.target);
+      await alex.getByText('Count it').click();
+      await alex.getByLabel('Target for the day').fill(item.target);
     }
-    await alex.getByRole('button', { name: 'Send to my partner' }).click();
+    await alex.getByRole('button', { name: 'Send to Sam' }).click();
     await expect(alex.getByText('can approve it now')).toBeVisible();
   }
 
@@ -88,40 +90,39 @@ test('capture the main screens', async ({ browser }) => {
 
   // One more proposal left pending, so the task list shows the locked state.
   await sam.goto('/tasks/new');
-  await sam.getByLabel('Title').fill('Stretch for ten minutes');
-  await sam.getByLabel('Emoji').fill('🧘');
-  await sam.getByRole('radio', { name: 'mint' }).check();
-  await sam.getByRole('button', { name: 'Send to my partner' }).click();
+  await sam.getByLabel('Name').fill('Cook dinner together');
+  await sam.getByLabel('Emoji').fill('🍝');
+  await sam.getByRole('radio', { name: 'berry' }).check();
+  await sam.getByRole('button', { name: 'Send to Alex' }).click();
 
-  // Log some progress on both sides so the side-by-side view has something to compare.
+  // Log some progress on both sides so the side-by-side view has something to
+  // compare: a mix of ticked, counted-and-reached, and counted-but-short.
+  const bump = async (page: Page, task: string, times: number) => {
+    const row = page.locator('[data-testid="task-row"]', { hasText: task });
+    for (let i = 0; i < times; i += 1) {
+      await row.getByRole('button', { name: new RegExp(`One more for ${task}`) }).click();
+      await page.waitForTimeout(220);
+    }
+  };
+  const tick = async (page: Page, task: string) => {
+    const row = page.locator('[data-testid="task-row"]', { hasText: task });
+    await row.getByRole('button', { name: new RegExp(`Mark ${task} done`) }).click();
+    await page.waitForTimeout(220);
+  };
+
   await sam.goto('/');
-  const samWater = sam.locator('.task-card', { hasText: 'Drink water' }).locator('.side-mine');
-  for (let i = 0; i < 3; i += 1) {
-    await samWater.getByRole('button', { name: /One more/ }).click();
-    await sam.waitForTimeout(250);
-  }
-  const samWalk = sam
-    .locator('.task-card', { hasText: 'Morning walk together' })
-    .locator('.side-mine');
-  await samWalk.getByRole('button', { name: 'Mark done' }).click();
+  await tick(sam, 'Morning walk together');
+  await bump(sam, 'Times we laughed', 3);
+  await bump(sam, 'Glasses of water', 8);
 
   await alex.goto('/');
-  const alexWater = alex.locator('.task-card', { hasText: 'Drink water' }).locator('.side-mine');
-  for (let i = 0; i < 6; i += 1) {
-    await alexWater.getByRole('button', { name: /One more/ }).click();
-    await alex.waitForTimeout(250);
-  }
-  const alexWalk = alex
-    .locator('.task-card', { hasText: 'Morning walk together' })
-    .locator('.side-mine');
-  await alexWalk.getByRole('button', { name: 'Mark done' }).click();
-  const alexRead = alex.locator('.task-card', { hasText: 'Read before bed' }).locator('.side-mine');
-  for (let i = 0; i < 20; i += 1) {
-    await alexRead.getByRole('button', { name: /One more/ }).click();
-  }
+  await tick(alex, 'Morning walk together');
+  await tick(alex, 'Read before bed');
+  await bump(alex, 'Times we laughed', 7);
+  await bump(alex, 'Glasses of water', 6);
 
   await alex.goto('/');
-  await expect(alex.locator('.task-card').first()).toBeVisible();
+  await expect(alex.locator('[data-testid="task-row"]').first()).toBeVisible();
   await shoot(alex, '04-today-side-by-side');
 
   await alex.goto('/tasks');
@@ -129,9 +130,9 @@ test('capture the main screens', async ({ browser }) => {
   await shoot(alex, '05-our-tasks');
 
   await alex.goto('/tasks/new');
-  await alex.getByLabel('Title').fill('Cook together on Sundays');
-  await alex.getByRole('radio', { name: 'Chosen days' }).check();
-  await alex.getByRole('checkbox', { name: 'Sun' }).check();
+  await alex.getByLabel('Name').fill('Times we laughed');
+  await alex.getByText('Count it').click();
+  await alex.getByLabel('Target for the day').fill('5');
   await shoot(alex, '06-add-a-task');
 
   await alex.goto('/settings');

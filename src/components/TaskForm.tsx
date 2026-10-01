@@ -13,6 +13,10 @@ type Action = (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
 /**
  * The one form behind adding and changing a task. Both paths send a *proposal*,
  * never a direct write, which is why the submit label says so.
+ *
+ * "How do you log it?" is the fork that matters: a tick box is done or not done,
+ * a counter is a number you add to until you reach its target. A counter always
+ * has a target — there is no such thing as one without.
  */
 export function TaskForm({
   action,
@@ -20,24 +24,26 @@ export function TaskForm({
   initial,
   submitLabel,
   today,
+  partnerName,
 }: {
   action: Action;
   taskId?: string;
   initial?: TaskDraft;
   submitLabel: string;
   today: string;
+  partnerName: string;
 }) {
   const [state, formAction] = useActionState<ActionResult, FormData>(action, { error: null });
   const [scheduleKind, setScheduleKind] = useState(initial?.schedule_kind ?? 'daily');
-  const [hasTarget, setHasTarget] = useState(initial?.target_count != null);
+  const [isCounter, setIsCounter] = useState(initial?.target_count != null);
 
   return (
-    <form action={formAction} className="stack">
+    <form action={formAction} className="l-stack">
       {taskId && <input type="hidden" name="task_id" value={taskId} />}
       <FormError message={state.error} />
 
       <div>
-        <label htmlFor="title">Title</label>
+        <label htmlFor="title">Name</label>
         <input
           id="title"
           name="title"
@@ -49,55 +55,64 @@ export function TaskForm({
         />
       </div>
 
-      <div>
-        <label htmlFor="description">Notes (optional)</label>
-        <textarea
-          id="description"
-          name="description"
-          maxLength={2000}
-          defaultValue={initial?.description}
-          placeholder="What counts as done?"
-        />
-      </div>
-
-      <div className="row">
-        <div style={{ width: '6rem' }}>
-          <label htmlFor="emoji">Emoji</label>
-          <input
-            id="emoji"
-            name="emoji"
-            type="text"
-            maxLength={8}
-            defaultValue={initial?.emoji ?? '💞'}
-          />
-        </div>
-      </div>
-
       <fieldset>
-        <legend>Colour</legend>
-        <div className="swatch-row">
-          {TASK_COLORS.map((color) => (
-            <label
-              key={color}
-              className="swatch"
-              style={{ ['--swatch-color' as string]: `var(--task-${color})` }}
-            >
-              <input
-                type="radio"
-                name="color"
-                value={color}
-                defaultChecked={(initial?.color ?? 'blush') === color}
-              />
-              <span className="swatch-dot" aria-hidden="true" />
-              {color}
-            </label>
-          ))}
+        <legend>How do you log it?</legend>
+        <div className="l-options">
+          <label className="l-option">
+            <input
+              type="radio"
+              name="log_kind"
+              value="tick"
+              checked={!isCounter}
+              onChange={() => setIsCounter(false)}
+              className="l-visually-hidden"
+            />
+            <span className="l-option-demo" aria-hidden="true">
+              ✓
+            </span>
+            <span className="l-option-name">Tick it off</span>
+            <span className="l-option-hint">Done or not done.</span>
+          </label>
+
+          <label className="l-option">
+            <input
+              type="radio"
+              name="log_kind"
+              value="count"
+              checked={isCounter}
+              onChange={() => setIsCounter(true)}
+              className="l-visually-hidden"
+            />
+            <span className="l-option-demo l-option-demo-count" aria-hidden="true">
+              7
+            </span>
+            <span className="l-option-name">Count it</span>
+            <span className="l-option-hint">A number you add to, until you hit a target.</span>
+          </label>
         </div>
+
+        {isCounter && (
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <label htmlFor="target_count">Target for the day</label>
+            <input
+              id="target_count"
+              name="target_count"
+              type="number"
+              min={1}
+              max={10000}
+              required
+              defaultValue={initial?.target_count ?? 5}
+            />
+            <p className="l-muted">
+              It counts as done once you reach it. Each of you has your own number.
+            </p>
+          </div>
+        )}
       </fieldset>
 
       <fieldset>
         <legend>How often</legend>
-        <div className="check-row">
+        <div className="l-choices">
           {(
             [
               ['daily', 'Every day'],
@@ -105,7 +120,7 @@ export function TaskForm({
               ['once', 'One time'],
             ] as const
           ).map(([value, label]) => (
-            <label key={value} className="check-chip">
+            <label key={value} className="l-choice">
               <input
                 type="radio"
                 name="schedule_kind"
@@ -119,9 +134,9 @@ export function TaskForm({
         </div>
 
         {scheduleKind === 'weekdays' && (
-          <div className="check-row" style={{ marginTop: 'var(--space-3)' }}>
+          <div className="l-choices" style={{ marginTop: 'var(--space-3)' }}>
             {ALL_WEEKDAYS.map((day) => (
-              <label key={day} className="check-chip">
+              <label key={day} className="l-choice">
                 <input
                   type="checkbox"
                   name="weekdays"
@@ -148,44 +163,62 @@ export function TaskForm({
       </fieldset>
 
       <fieldset>
-        <legend>Target</legend>
-        <label className="check-chip">
-          <input
-            type="checkbox"
-            checked={hasTarget}
-            onChange={(e) => setHasTarget(e.target.checked)}
-          />
-          Count up to a number
-        </label>
-        {hasTarget ? (
-          <div style={{ marginTop: 'var(--space-3)' }}>
-            <label htmlFor="target_count">Done when we reach</label>
+        <legend>Look</legend>
+        <div className="l-row" style={{ marginBottom: 'var(--space-3)' }}>
+          <div style={{ width: '6rem' }}>
+            <label htmlFor="emoji">Emoji</label>
             <input
-              id="target_count"
-              name="target_count"
-              type="number"
-              min={1}
-              max={10000}
-              defaultValue={initial?.target_count ?? 8}
+              id="emoji"
+              name="emoji"
+              type="text"
+              maxLength={8}
+              defaultValue={initial?.emoji ?? '💞'}
             />
-            <p className="muted">For example 8 glasses of water.</p>
           </div>
-        ) : (
-          <p className="muted">Otherwise it is a simple done / not done.</p>
-        )}
+        </div>
+        <div className="l-swatches">
+          {TASK_COLORS.map((color) => (
+            <label
+              key={color}
+              className="l-swatch"
+              style={{ ['--swatch-colour' as string]: `var(--task-${color})` }}
+            >
+              <input
+                type="radio"
+                name="color"
+                value={color}
+                defaultChecked={(initial?.color ?? 'blush') === color}
+              />
+              <span className="l-swatch-dot" aria-hidden="true" />
+              {color}
+            </label>
+          ))}
+        </div>
       </fieldset>
+
+      <div>
+        <label htmlFor="description">Notes (optional)</label>
+        <textarea
+          id="description"
+          name="description"
+          maxLength={2000}
+          defaultValue={initial?.description}
+          placeholder="What counts as done?"
+        />
+      </div>
 
       <div>
         <label htmlFor="note">Message to your partner (optional)</label>
         <input id="note" name="note" type="text" maxLength={500} placeholder="Shall we try this?" />
       </div>
 
-      <div className="row">
+      <p className="l-muted">
+        {partnerName} has to approve this before it joins your list.
+      </p>
+
+      <div className="l-row">
         <SubmitButton pendingLabel="Sending…">{submitLabel}</SubmitButton>
       </div>
-      <p className="muted">
-        This goes to your partner first. It joins your shared list once they approve it.
-      </p>
     </form>
   );
 }

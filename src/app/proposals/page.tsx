@@ -1,8 +1,11 @@
 import { redirect } from 'next/navigation';
 import { getCoupleContext, getProposals, getSession, getTasks, isLinked } from '@/lib/data';
-import { effectiveStatus, partitionOpenProposals } from '@/lib/proposals';
+import {
+  PROPOSAL_STATUS_LABELS,
+  effectiveStatus,
+  partitionOpenProposals,
+} from '@/lib/proposals';
 import { ProposalCard } from './ProposalCard';
-import { PROPOSAL_STATUS_LABELS } from '@/lib/proposals';
 
 /** Everything waiting on a yes — from either side — plus what has been settled. */
 export default async function ProposalsPage({
@@ -21,47 +24,45 @@ export default async function ProposalsPage({
   const titleById = new Map(tasks.map((task) => [task.id, task.title]));
   const { waitingOnMe, waitingOnPartner } = partitionOpenProposals(proposals, session.userId);
 
-  const settled = proposals
-    .filter((proposal) => effectiveStatus(proposal) !== 'pending')
-    .slice(0, 20);
+  const partnerName = context.partner?.display_name ?? 'Your partner';
+  const settled = proposals.filter((p) => effectiveStatus(p) !== 'pending').slice(0, 20);
 
   return (
-    <div className="stack">
-      <div className="stack-tight">
+    <>
+      <div className="l-stack-tight">
         <h1>Approvals</h1>
-        <p className="muted">
+        <p className="l-muted">
           Nothing changes on your shared list until you both agree. Anything left unanswered for
           seven days expires on its own.
         </p>
       </div>
 
-      {sent === '1' && (
-        <p className="notice">Sent. {context.partner?.display_name} can approve it now.</p>
-      )}
+      {sent === '1' && <p className="l-note">Sent. {partnerName} can approve it now.</p>}
 
-      <section className="stack">
-        <h2>Waiting for you</h2>
+      <section className="l-stack">
+        <span className="l-label">Waiting for you</span>
         {waitingOnMe.length === 0 ? (
-          <div className="empty">
+          <div className="l-empty">
             <p>Nothing needs your approval right now.</p>
           </div>
         ) : (
-          waitingOnMe.map((proposal) => (
+          waitingOnMe.map((proposal, index) => (
             <ProposalCard
               key={proposal.id}
               proposal={proposal}
               taskTitle={proposal.task_id ? titleById.get(proposal.task_id) ?? null : null}
-              proposerName={context.partner?.display_name ?? 'Your partner'}
+              proposerName={partnerName}
               mine={false}
+              position={`${index + 1} of ${waitingOnMe.length}`}
             />
           ))
         )}
       </section>
 
-      <section className="stack">
-        <h2>Waiting for {context.partner?.display_name}</h2>
+      <section className="l-stack">
+        <span className="l-label">Waiting for {partnerName}</span>
         {waitingOnPartner.length === 0 ? (
-          <div className="empty">
+          <div className="l-empty">
             <p>You have nothing out for approval.</p>
           </div>
         ) : (
@@ -70,7 +71,7 @@ export default async function ProposalsPage({
               key={proposal.id}
               proposal={proposal}
               taskTitle={proposal.task_id ? titleById.get(proposal.task_id) ?? null : null}
-              proposerName="You"
+              proposerName={partnerName}
               mine
             />
           ))
@@ -78,26 +79,22 @@ export default async function ProposalsPage({
       </section>
 
       {settled.length > 0 && (
-        <section className="stack">
-          <h2>Settled</h2>
-          <ul className="stack-tight" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        <section className="l-stack-tight">
+          <span className="l-label">Settled</span>
+          <ul className="l-list">
             {settled.map((proposal) => (
-              <li key={proposal.id} className="card">
-                <div className="spread">
-                  <span>
-                    {proposal.payload.title ??
-                      (proposal.task_id ? titleById.get(proposal.task_id) : null) ??
-                      'A task'}
-                  </span>
-                  <span className="chip">
-                    {PROPOSAL_STATUS_LABELS[effectiveStatus(proposal)]}
-                  </span>
-                </div>
+              <li key={proposal.id} className="l-task" style={{ gridTemplateColumns: 'minmax(0, 1fr) auto' }}>
+                <span className="l-task-body">
+                  {proposal.payload.title ??
+                    (proposal.task_id ? titleById.get(proposal.task_id) : null) ??
+                    (proposal.kind === 'day_end' ? 'End-of-day time' : 'A task')}
+                </span>
+                <span className="l-chip">{PROPOSAL_STATUS_LABELS[effectiveStatus(proposal)]}</span>
               </li>
             ))}
           </ul>
         </section>
       )}
-    </div>
+    </>
   );
 }

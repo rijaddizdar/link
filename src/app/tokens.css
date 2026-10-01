@@ -1,0 +1,111 @@
+/*
+ * Link design tokens — the single place colours, fonts, radii and shadows are
+ * defined. Components never hard-code a colour; they reference these variables.
+ * The captain is choosing the final visual direction separately, so this file is
+ * meant to be swapped wholesale without touching a single component.
+ *
+ * Palette intent: fun but romantic — warm pinks, corals and plums.
+ */
+
+:root {
+  /* --- raw palette ------------------------------------------------------- */
+  --c-blush-100: #fff1f4;
+  --c-blush-200: #ffdfe6;
+  --c-blush-400: #ff9bb2;
+  --c-blush-600: #e8537b;
+
+  --c-coral-200: #ffe0d4;
+  --c-coral-400: #ff9b76;
+  --c-coral-600: #e8653a;
+
+  --c-plum-100: #f6eefb;
+  --c-plum-300: #d9b8ea;
+  --c-plum-600: #8b4fae;
+  --c-plum-800: #4a2558;
+
+  --c-rose-400: #f27a97;
+  --c-berry-600: #b52a63;
+  --c-peach-400: #ffc69b;
+  --c-lilac-400: #c3a7f0;
+  --c-mint-400: #8fd9bf;
+
+  --c-cream: #fffaf7;
+  --c-ink: #3a2130;
+  --c-ink-soft: #7c6070;
+  --c-line: #f0dde3;
+  --c-white: #ffffff;
+
+  /* --- semantic ---------------------------------------------------------- */
+  --bg-page: var(--c-cream);
+  --bg-surface: var(--c-white);
+  --bg-surface-alt: var(--c-blush-100);
+  --bg-accent-soft: var(--c-plum-100);
+
+  --text-strong: var(--c-ink);
+  --text-soft: var(--c-ink-soft);
+  --text-on-accent: var(--c-white);
+
+  --accent: var(--c-blush-600);
+  --accent-hover: var(--c-berry-600);
+  --accent-soft: var(--c-blush-200);
+  --accent-alt: var(--c-plum-600);
+
+  --border: var(--c-line);
+  --border-strong: var(--c-blush-400);
+
+  --ok: var(--c-mint-400);
+  --danger: var(--c-coral-600);
+  --warn: var(--c-coral-400);
+
+  /* Column accents for the side-by-side view: me on the left, partner right. */
+  --mine-accent: var(--c-blush-600);
+  --mine-soft: var(--c-blush-100);
+  --theirs-accent: var(--c-plum-600);
+  --theirs-soft: var(--c-plum-100);
+
+  /* --- task colour swatches (tasks.color) -------------------------------- */
+  --task-blush: var(--c-blush-400);
+  --task-coral: var(--c-coral-400);
+  --task-plum: var(--c-plum-600);
+  --task-rose: var(--c-rose-400);
+  --task-berry: var(--c-berry-600);
+  --task-peach: var(--c-peach-400);
+  --task-lilac: var(--c-lilac-400);
+  --task-mint: var(--c-mint-400);
+
+  /* --- type ------------------------------------------------------------- */
+  --font-body: ui-rounded, 'Nunito', 'Avenir Next', system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-body);
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.625rem;
+  --fs-2xl: 2.125rem;
+
+  --fw-normal: 400;
+  --fw-medium: 600;
+  --fw-bold: 800;
+
+  /* --- space, radii, shadow --------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgb(58 33 48 / 0.06);
+  --shadow-md: 0 6px 18px rgb(58 33 48 / 0.08);
+
+  --focus-ring: 0 0 0 3px var(--accent-soft);
+
+  --page-max: 60rem;
+}

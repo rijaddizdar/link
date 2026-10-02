@@ -24,7 +24,7 @@ export default async function NewTaskPage() {
         <TaskForm
           action={proposeTaskAction}
           submitLabel={`Send to ${partnerName}`}
-          today={context.today}
+          today={context.activeDate}
           partnerName={partnerName}
         />
       </div>

@@ -82,6 +82,44 @@ export type TaskCompletion = {
   completed_at: string;
 };
 
+/**
+ * One settled day. Written once the day's end time has passed and never
+ * recomputed, so a later edit to the task list cannot rewrite history.
+ */
+export type DayResult = {
+  couple_id: string;
+  local_date: string;
+  /** How many tasks were scheduled that day. */
+  scheduled_count: number;
+  /** user id → how many of them that partner finished. */
+  scores: Record<string, number>;
+  /** null means a tie — the shared heart. */
+  winner_user_id: string | null;
+  /** Both partners finished everything scheduled. What a streak day is. */
+  both_complete: boolean;
+  settled_at: string;
+};
+
+export type ChallengeStatus = 'open' | 'withdrawn' | 'conceded' | 'stood_by';
+
+/**
+ * One partner questioning the other's log for a day. Logs are trusted, so a
+ * challenge never removes one by itself — only the person who logged it can.
+ */
+export type CompletionChallenge = {
+  id: string;
+  couple_id: string;
+  task_id: string;
+  /** Whose log is being questioned. */
+  challenged_user_id: string;
+  local_date: string;
+  raised_by: string;
+  reason: string;
+  status: ChallengeStatus;
+  created_at: string;
+  resolved_at: string | null;
+};
+
 export type Profile = {
   id: string;
   display_name: string;

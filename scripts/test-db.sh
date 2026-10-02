@@ -16,4 +16,7 @@ if [ -z "$PSQL" ]; then
 fi
 
 cd "$(dirname "$0")/.."
-"$PSQL" "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/rules.test.sql
+for suite in tests/db/*.test.sql; do
+  echo "--- $suite"
+  "$PSQL" "$DB_URL" -v ON_ERROR_STOP=1 -f "$suite"
+done

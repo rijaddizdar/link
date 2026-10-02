@@ -352,28 +352,30 @@ select pg_temp.check(
 select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
 
 -- --- completion logging -----------------------------------------------------
+-- A closed day no longer accepts logs, so these use the day the couple is
+-- currently living. competition.test.sql covers the closed-day rule itself.
 
 select pg_temp.act_as('11111111-1111-1111-1111-111111111111');
-select public.set_completion((select id from t_task), 1, '2026-06-03');
+select public.set_completion((select id from t_task), 1, public.couple_active_date(public.current_couple_id()));
 
 select pg_temp.act_as('22222222-2222-2222-2222-222222222222');
-select public.set_completion((select id from t_task), 1, '2026-06-03');
+select public.set_completion((select id from t_task), 1, public.couple_active_date(public.current_couple_id()));
 
 select pg_temp.check(
   'each partner logs the same task separately, and both are visible',
   (select count(*) from public.task_completions
-    where task_id = (select id from t_task) and local_date = '2026-06-03') = 2
+    where task_id = (select id from t_task) and local_date = public.couple_active_date(public.current_couple_id())) = 2
 );
 
 select pg_temp.check(
   'logging again on the same day updates rather than duplicating',
-  (public.set_completion((select id from t_task), 5, '2026-06-03')).count = 5
+  (public.set_completion((select id from t_task), 5, public.couple_active_date(public.current_couple_id()))).count = 5
 );
 
 -- Two statements, because the delete has to happen before the count is read.
 select pg_temp.check(
   'clearing a log returns nothing',
-  public.set_completion((select id from t_task), 0, '2026-06-03') is null
+  public.set_completion((select id from t_task), 0, public.couple_active_date(public.current_couple_id())) is null
 );
 select pg_temp.check(
   'a count of zero removes my row and leaves my partner row alone',

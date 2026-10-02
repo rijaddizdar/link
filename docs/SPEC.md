@@ -8,6 +8,8 @@ This document records the agreed v1 spec and marks what the first PR
 
 Legend: **[v1]** shipped in this PR · **[later]** designed for, not built yet.
 
+All of v1 is now built. What remains is listed in section 10.
+
 ---
 
 ## 1. Accounts and linking
@@ -20,9 +22,15 @@ Legend: **[v1]** shipped in this PR · **[later]** designed for, not built yet.
   typed in any casing with or without separators.
 - **[v1]** A code works for 7 days, can be used once, and cannot be redeemed by the
   person who created it. Making a new code revokes the previous unused one.
-- **[v1]** The couple's **time zone is set at linking**, by whoever generates the code.
-  It decides when a day starts and ends for both partners, wherever either of them is.
-  Either partner can change it afterwards in Settings.
+- **[v1]** The couple's **time zone** and **end-of-day time** are both set at linking, by
+  whoever generates the code. Together they decide which day a completion lands on,
+  wherever either partner is.
+  - The time zone stays directly editable in Settings.
+  - The end-of-day time changes **only when both partners agree**, through the same
+    approval flow as a task change.
+- **[v1]** **The day rolls over at the agreed end-of-day time, not at midnight.** At 9:01 PM
+  with a 9 PM end time, both partners are already logging into tomorrow. Every date in the
+  app is this *active date*.
 - **[v1]** A couple is exactly two people. A third account cannot join.
 - **[v1]** A user who is not in a couple sees nothing shared — enforced in the database,
   not only in the UI.
@@ -79,41 +87,51 @@ Legend: **[v1]** shipped in this PR · **[later]** designed for, not built yet.
   on a phone, still labelled.
 - **[v1]** Only my own column has controls. My partner's column is read-only.
 
-## 5. Daily competition — **[later]**
+## 5. Daily competition
 
-Not built in this PR. The data model is already shaped for it.
+- **[v1]** The couple sets the time of day a day ends (section 1).
+- **[v1]** At that moment the day closes and the partner who completed more of **that
+  day's scheduled** tasks wins it. A counter only counts once it reaches its target.
+- **[v1]** Equal counts are a **tie**, shown as a shared heart. A tie is never framed as a
+  loss: "nobody wins, so you both do".
+- **[v1]** A day **neither** of them touched is not a tie. The database records no winner
+  for both cases, but the screens tell them apart — showing an untouched day as a shared
+  heart would be a lie. It reads "nobody finished".
+- **[v1]** A day is **settled once and never recomputed.** Editing or deleting a task later
+  cannot rewrite who won last Tuesday.
+- **[v1]** Settling happens whenever a screen that shows results is opened, so the app is
+  correct with no scheduled job running at all. The job in `.github/workflows/maintenance.yml`
+  is a backstop.
+- **[v1]** **Logs are trusted.** Either partner can **challenge** one of the other's logs
+  before the day closes — but a challenge is a question, not a veto. It never removes
+  anything. The only person who can clear a log is the one who made it, by conceding.
+  A challenge still open when the day closes simply stands.
+- **[v1]** A **shared streak** counts consecutive days on which both partners finished
+  everything scheduled. A day with nothing scheduled neither adds to the streak nor breaks
+  it — there was nothing to finish, so it should not punish them.
 
-- The couple sets the time of day a day ends.
-- At that moment the partner who completed more of **that day's scheduled** tasks wins
-  the day. Equal counts are a tie, shown as a shared heart.
-- Logs are trusted. Either partner can **challenge** one of the other's logs before the
-  day ends.
-- A **shared streak** counts consecutive days on which both partners finished
-  everything scheduled.
+## 6. Calendar tab
 
-What already exists for it: `tasks.schedule_kind` / `weekdays` / `due_date` say what was
-scheduled on a given day, and `task_completions` is keyed by
-`(task_id, user_id, local_date)` with `local_date` in the couple's own time zone — so a
-day's score is a group-by over one index, with no backfill needed.
-
-What it still needs: a `day_end_time` on `couples`, a challenge table, and a stored
-per-day result (or a view) for streaks.
-
-## 6. Calendar tab — **[later]**
-
-Not built in this PR.
-
-- A month calendar showing each day's winner, or a tie.
-- The monthly winner is whoever took the most daily wins that month.
+- **[v1]** A month grid, Monday first, with one marker per day: rose if you won, violet if
+  your partner did, lime heart for a tie, black where nobody finished, dashed for days
+  still to come.
+- **[v1]** Every settled day links to its own end-of-day screen.
+- **[v1]** The **monthly winner** is whoever took the most daily wins that month. Days
+  neither of them touched are left out of the tally as well as off the grid.
+- **[v1]** The month also shows the current shared streak and how the previous month went.
 
 ## 7. Look and feel
 
-- **[v1]** Fun but romantic: warm pinks, corals and plums.
-- **[v1]** Every colour, font, radius and shadow lives in `src/app/tokens.css` as a
-  design token. No component hard-codes a colour. The final visual direction is being
-  chosen separately, so that one file can be swapped wholesale without touching a
-  component.
-- **[later]** Full visual polish, motion, and illustration.
+- **[v1]** Direction **D · Bold Modern**, chosen by the captain on the design board.
+  Electric rose and violet on warm paper, 2px black outlines, hard offset shadows that
+  never blur, flat fills, uppercase micro-labels and very large numbers.
+- **[v1]** **Rose is always you, violet is always your partner.** On every screen, without
+  exception, and neither colour is used for anything else.
+- **[v1]** Every colour, font, radius and shadow lives in `src/app/tokens.css` as a design
+  token. No component hard-codes one.
+- **[v1]** Phone and desktop share one component set: a bottom tab bar becomes a left
+  sidebar, and the day list is the same list with room around it.
+- **[later]** Motion and illustration.
 
 ## 8. Out of scope for v1
 
@@ -125,7 +143,17 @@ Not built in this PR.
 - **[v1]** Next.js (App Router, TypeScript) and Supabase (Postgres, Auth, Row Level
   Security), both on free tiers.
 - **[v1]** Runs locally against the Supabase CLI stack. See the README.
-- **[later]** Going live is a separate decision and is not part of this PR.
+- **[v1]** A daily GitHub Actions job settles days, expires proposals and purges couples
+  past their grace period. It also keeps a free-tier Supabase project from pausing after a
+  week of inactivity, which is a side effect rather than its purpose.
+- **[later]** Going live is a separate decision. The free Supabase tier is far more than
+  two people need: the largest table grows by roughly 2 MB a year against a 500 MB limit.
+
+## 10. Still open
+
+- **The 'Us' tab.** It is in the navigation on every design mockup but its contents were
+  never decided, so it ships as a disabled placeholder. This is a captain decision, not an
+  oversight.
 
 ---
 
@@ -140,11 +168,17 @@ Not built in this PR.
 | `tasks` | **Approved** tasks only. Soft-archived, never hard-deleted by the app. |
 | `task_proposals` | Creates, edits and deletions waiting for the partner. |
 | `task_completions` | One row per task, per partner, per couple-local date. |
+| `day_results` | One settled day: the scores, the winner (NULL for no winner), and whether both cleared it. Written once. |
+| `completion_challenges` | One partner questioning the other's log, before the day closes. |
 
 Rules that live in the database rather than the app:
 
 - `current_couple_id()` — the caller's active couple; every couple-scoped RLS policy
   hangs off it.
+- `couple_active_date()` / `couple_day_closes_at()` — where a day starts and stops, given
+  the agreed end-of-day time. Everything that touches a date goes through these.
+- `settle_day()` / `settle_due_days()` / `settle_all_due_days()` — closing out a day, once.
+- `raise_challenge()` / `concede_challenge()` / `stand_by_log()` / `withdraw_challenge()`.
 - `generate_invite_code()` / `peek_invite_code()` / `redeem_invite_code()` — linking.
 - `propose_task()` / `propose_task_edit()` / `propose_task_delete()` — proposals.
 - `approve_proposal()` / `reject_proposal()` / `cancel_proposal()` — decisions, with the

@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
-import { createAccount, uniqueEmail } from './helpers';
+import {
+  backdateCouple,
+  coupleDates,
+  createAccount,
+  readCouple,
+  seedCompletion,
+  uniqueEmail,
+} from './helpers';
 
 /**
  * Captures the main screens at desktop and phone width for the PR.
@@ -19,6 +26,12 @@ const WIDTHS = [
 async function shoot(page: Page, name: string): Promise<void> {
   for (const size of WIDTHS) {
     await page.setViewportSize({ width: size.width, height: size.height });
+    // The phone tab bar is fixed to the viewport, which in a full-page capture
+    // renders it floating across the middle of the image. Pinning it to the end
+    // of the document for the shot shows the page as it actually reads.
+    await page.addStyleTag({
+      content: '.l-tabs { position: static !important; }',
+    });
     await page.waitForTimeout(250);
     await page.screenshot({ path: `${OUT}/${name}-${size.name}.png`, fullPage: true });
   }
@@ -138,6 +151,51 @@ test('capture the main screens', async ({ browser }) => {
   await alex.goto('/settings');
   await expect(alex.getByRole('heading', { name: 'Settings' })).toBeVisible();
   await shoot(alex, '07-settings');
+
+  // --- the competition needs a past, so give the couple one ----------------
+  // Seeded directly, because waiting a fortnight for the calendar to fill in is
+  // not a screenshot script. Nothing is settled until a screen loads after this.
+  const { coupleId, userIds, taskIds } = await readCouple();
+  await backdateCouple(coupleId, 30);
+  const { active } = await coupleDates(coupleId);
+
+  const [first, second] = userIds;
+  const dayBefore = (n: number) => {
+    const d = new Date(`${active}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  // A fortnight of plausible days: some theirs, some yours, some shared, one missed.
+  // Each entry is how many of the four tasks each of them finished.
+  const history: Array<[number, number]> = [
+    [4, 4], [4, 4], [4, 3], [2, 4], [3, 1], [1, 3], [4, 4], [0, 0],
+    [2, 3], [4, 2], [3, 3], [4, 4], [1, 2], [3, 4], [4, 1], [2, 2],
+  ];
+
+  for (let i = 0; i < history.length; i += 1) {
+    const date = dayBefore(i + 1);
+    const [mine, theirs] = history[i];
+    for (let t = 0; t < mine; t += 1) {
+      await seedCompletion(coupleId, taskIds[t], first, date, 99);
+    }
+    for (let t = 0; t < theirs; t += 1) {
+      await seedCompletion(coupleId, taskIds[t], second, date, 99);
+    }
+  }
+
+  // Loading a screen settles everything that closed, and then they have a record.
+  // Shot on the month the history actually fills, rather than a current month
+  // that may be two days old.
+  await alex.goto('/calendar');
+  await expect(alex.getByTestId('month-grid')).toBeVisible();
+  await alex.goto(`/calendar?month=${dayBefore(8).slice(0, 7)}`);
+  await expect(alex.getByTestId('month-grid')).toBeVisible();
+  await shoot(alex, '09-calendar');
+
+  await alex.goto(`/day/${dayBefore(1)}`);
+  await expect(alex.getByTestId('day-headline')).toBeVisible();
+  await shoot(alex, '08-day-result');
 
   await alexContext.close();
   await samContext.close();

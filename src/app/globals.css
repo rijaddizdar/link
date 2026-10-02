@@ -132,19 +132,36 @@ a:hover { text-decoration: underline; }
   padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
 }
 
+/* Six tabs have to fit across a 390px phone, so the tracking goes and the label
+   is allowed to shrink rather than collide with its neighbour. */
 .l-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-1);
+  padding: var(--space-1) 2px;
   font-family: var(--font-display);
-  font-size: var(--fs-micro);
+  font-size: 0.58rem;
   font-weight: var(--fw-bold);
-  letter-spacing: var(--label-ls);
+  letter-spacing: 0.01em;
   text-transform: var(--label-tt);
   color: var(--muted);
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A dot, not a count: the number costs more width than it is worth down here. */
+.l-tab-dot {
+  position: absolute;
+  margin: -2px 0 0 1.4em;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--pill);
+  background: var(--primary);
+  border: 1px solid var(--ink);
 }
 
 .l-tab:hover { text-decoration: none; }
@@ -204,6 +221,24 @@ a:hover { text-decoration: underline; }
     font-size: var(--fs-xs);
     letter-spacing: 0.04em;
     text-transform: none;
+    overflow: visible;
+  }
+
+  /* There is room for the real number in the sidebar. */
+  .l-tab-dot {
+    position: static;
+    margin: 0 0 0 auto;
+    width: auto;
+    height: auto;
+    border-radius: var(--chip-radius);
+    padding: 0 var(--space-2);
+    color: var(--primary-ink);
+    font-size: var(--fs-micro);
+  }
+
+  .l-tab[aria-current='page'] .l-tab-dot {
+    background: var(--surface);
+    color: var(--ink);
   }
 
   .l-tab[aria-current='page'] {
@@ -608,6 +643,45 @@ legend {
 
 .l-task-note { color: var(--muted); font-size: var(--fs-xs); }
 
+/* A challenge, and the button that opens one, sit under the row they are about
+   and span the whole grid rather than squeezing into a completion column. */
+.l-task-aside {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.l-ask {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  text-transform: var(--label-tt);
+  color: var(--muted);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.l-ask:hover { color: var(--ink); }
+
+.l-ask:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.l-challenge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--surface-2);
+  border: var(--border-width) dashed var(--ink);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+
 .l-add-task {
   display: flex;
   align-items: center;
@@ -758,6 +832,128 @@ button.l-box:focus-visible {
   font-weight: var(--fw-bold);
   letter-spacing: var(--display-ls);
 }
+
+/* --- the end-of-day moment ----------------------------------------------- */
+
+/*
+ * Full-bleed rose, white text. Anything white dropped on here has to reset its
+ * own colour rather than inherit — the contrast trap the design review flagged.
+ */
+.l-win {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.l-win .l-label { color: var(--primary-ink); }
+.l-win p { color: var(--primary-ink); max-width: 26rem; }
+
+.l-win-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  background: var(--surface);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: var(--fs-xl);
+}
+
+.l-win-headline {
+  font-size: var(--fs-2xl);
+  text-transform: var(--label-tt);
+  color: var(--primary-ink);
+  line-height: 1;
+}
+
+/* --- calendar ------------------------------------------------------------- */
+
+.l-monthbar {
+  display: flex;
+  height: var(--space-4);
+  border: var(--border);
+  border-radius: var(--chip-radius);
+  overflow: hidden;
+}
+
+.l-monthbar-mine { background: var(--mine); }
+.l-monthbar-theirs { background: var(--theirs); }
+.l-monthbar-tie { background: var(--accent); }
+
+.l-month {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  justify-items: center;
+}
+
+.l-month-head {
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--label-ls);
+  color: var(--muted);
+}
+
+.l-day-link { display: block; min-width: 0; }
+.l-day-link:hover { text-decoration: none; }
+
+/* Nothing in D is a circle: the day markers are rounded squares. */
+.l-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: var(--border);
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-family: var(--font-display);
+  line-height: 1;
+}
+
+.l-day-number { font-size: var(--fs-micro); font-weight: var(--fw-medium); }
+.l-day-mark { font-size: var(--fs-micro); font-weight: var(--fw-bold); }
+
+.l-day-mine { background: var(--mine); color: var(--mine-ink); }
+.l-day-theirs { background: var(--theirs); color: var(--theirs-ink); }
+.l-day-tie { background: var(--accent); color: var(--ink); }
+.l-day-none { background: var(--ink); color: var(--surface); }
+
+.l-day-future {
+  background: transparent;
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.l-day-today { box-shadow: var(--shadow-row); border-color: var(--primary); }
+
+.l-day-chip { width: var(--space-4); height: var(--space-4); vertical-align: -3px; }
+
+.l-key {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+.l-key li { display: inline-flex; align-items: center; gap: var(--space-2); }
 
 /* --- approvals ----------------------------------------------------------- */
 

@@ -28,7 +28,7 @@ export default async function EditTaskPage({ params }: { params: Promise<{ id: s
           taskId={task.id}
           initial={task}
           submitLabel="Send the change"
-          today={context.today}
+          today={context.activeDate}
           partnerName={partnerName}
         />
       </div>

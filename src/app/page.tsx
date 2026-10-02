@@ -1,65 +1,87 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { TaskBoard } from '@/components/TaskBoard';
-import { getCoupleContext, getDayBoard, getProposals, getSession, isLinked } from '@/lib/data';
+import {
+  getChallenges,
+  getCoupleContext,
+  getDayBoard,
+  getLatestDayResult,
+  getProposals,
+  getRecentDayResults,
+  getSession,
+  isLinked,
+  settleDueDays,
+} from '@/lib/data';
 import { partitionOpenProposals } from '@/lib/proposals';
 import { isDone } from '@/lib/schedule';
+import { sharedStreak } from '@/lib/scoring';
+import { addDays, timeLeftLabel } from '@/lib/day';
 import { formatDayEndTime } from '@/lib/format';
 
-/** Today: the shared list for the couple's current local date, side by side. */
-export default async function TodayPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ date?: string }>;
-}) {
+/** Today: the shared list for the day the couple is currently living. */
+export default async function TodayPage() {
   const session = await getSession();
   if (!session) redirect('/login');
 
   const context = await getCoupleContext(session);
   if (!isLinked(context) || !context) redirect('/link');
 
-  const { date } = await searchParams;
-  const localDate = /^\d{4}-\d{2}-\d{2}$/.test(date ?? '') ? date! : context.today;
+  // Close out anything that ended while nobody was looking, before reading results.
+  await settleDueDays(context.couple.id);
 
-  const [items, proposals] = await Promise.all([getDayBoard(context, localDate), getProposals()]);
+  const localDate = context.activeDate;
+  const [items, proposals, challenges, latest, history] = await Promise.all([
+    getDayBoard(context, localDate),
+    getProposals(),
+    getChallenges(localDate),
+    getLatestDayResult(),
+    getRecentDayResults(localDate),
+  ]);
+
   const { waitingOnMe } = partitionOpenProposals(proposals, session.userId);
+  const streak = sharedStreak(history);
 
-  // A plain count of what each of us finished. Who *won* the day is a later PR:
-  // nothing here declares a winner.
+  // A plain count of where each of you is. The day is not decided until it closes.
   const doneByMe = items.filter((item) => isDone(item.task, item.mine)).length;
   const doneByPartner = items.filter((item) => isDone(item.task, item.theirs)).length;
 
-  const heading =
-    localDate === context.today
-      ? 'Today'
-      : new Date(`${localDate}T00:00:00Z`).toLocaleDateString(undefined, {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-          timeZone: 'UTC',
-        });
+  const justFinished = latest && latest.local_date === addDays(localDate, -1) ? latest : null;
 
   return (
     <>
       <div className="l-spread">
         <div className="l-stack-tight">
-          <h1>{heading}</h1>
+          <h1>Today</h1>
           <p className="l-muted">
             {context.me.display_name || 'You'} &amp; {context.partner?.display_name}
           </p>
         </div>
-        <Link href="/tasks/new" className="l-btn">
-          Add a task
-        </Link>
+        <div className="l-row">
+          {streak > 0 && (
+            <span className="l-chip l-chip-accent" data-testid="streak">
+              <span aria-hidden="true">🔥</span> {streak}
+            </span>
+          )}
+          <Link href="/tasks/new" className="l-btn">
+            Add a task
+          </Link>
+        </div>
       </div>
 
       <p className="l-dayend">
         <span aria-hidden="true">◷</span>
         <span>
-          Day ends at <span className="l-dayend-time">{formatDayEndTime(context.couple.day_end_time)}</span>
+          Day ends at{' '}
+          <span className="l-dayend-time">{formatDayEndTime(context.couple.day_end_time)}</span>
         </span>
-        <span className="l-muted">· {context.couple.time_zone}</span>
+        <span className="l-muted">· {timeLeftLabel(context.msLeft)}</span>
       </p>
+
+      {justFinished && (
+        <Link href={`/day/${justFinished.local_date}`} className="l-note" data-testid="last-day">
+          Yesterday is settled. <strong>See how it went →</strong>
+        </Link>
+      )}
 
       {waitingOnMe.length > 0 && (
         <p className="l-note">
@@ -70,7 +92,13 @@ export default async function TodayPage({
         </p>
       )}
 
-      <TaskBoard items={items} me={context.me} partner={context.partner} localDate={localDate} />
+      <TaskBoard
+        items={items}
+        me={context.me}
+        partner={context.partner}
+        localDate={localDate}
+        challenges={challenges}
+      />
 
       {items.length > 0 && (
         <div className="l-tally">

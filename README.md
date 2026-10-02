@@ -11,16 +11,23 @@ The full agreed product spec, including what this repo does **not** do yet, is i
 ## What works today
 
 - Accounts, sign-up and sign-in.
-- Linking with a one-time code, with the couple's shared time zone set at linking.
+- Linking with a one-time code. The couple's shared **time zone** and **end-of-day time**
+  are both agreed during that setup.
 - Unlinking, with a 30-day grace period you can undo inside.
-- One shared task list with no cap: title, notes, emoji, colour, schedule (every day /
-  chosen weekdays / one time) and an optional numeric target.
-- Partner approval: a new task, an edit or a deletion only takes effect once the other
-  partner approves it. Unanswered proposals expire after 7 days.
+- One shared task list with no cap: name, notes, emoji, colour, schedule (every day /
+  chosen weekdays / one time), and either a **tick box** or a **counter** with a daily target.
+- Partner approval: a new task, an edit, a deletion, or a change to the end-of-day time
+  only takes effect once the other partner approves it. Unanswered proposals expire after
+  7 days.
 - Per-partner completion logging, shown side by side on the day view.
+- **The daily competition.** At the agreed time the day closes and whoever did more wins
+  it; equal counts are a tie. A shared streak counts days you both cleared.
+- **Challenges.** Either of you can question the other's log before the day closes. It only
+  asks — nothing is removed unless the person who logged it concedes.
+- **The calendar.** Daily winners and ties across a month, and who is taking the month.
 
-Daily scoring, winners, challenges, streaks and the calendar tab are deliberately not
-built yet — see `docs/SPEC.md`.
+The only thing deliberately left undone is the **'Us' tab**, which is a placeholder because
+its contents are still an open product decision. See `docs/SPEC.md`.
 
 ## Running it locally
 
@@ -65,9 +72,10 @@ then use the code from the first window. One account per browser session.
 ## Tests
 
 ```bash
-npm test          # Vitest — approval and expiry rules, code linking, scheduling
-npm run test:db   # SQL — RLS isolation and the approval rules, against the local stack
-npm run test:e2e  # Playwright — the two-partner happy path, against the local stack
+npm test          # Vitest — approval and expiry, code linking, scheduling, day
+                  #          boundaries, scoring, streaks and month tallies
+npm run test:db   # SQL — RLS isolation, the approval rules, day settling, challenges
+npm run test:e2e  # Playwright — the two-partner happy path and the competition
 npm run test:all  # all three
 ```
 
@@ -85,9 +93,10 @@ SCREENSHOTS=1 npx playwright test tests/e2e/screenshots.spec.ts
 ```
 src/app/            routes (App Router) and the design tokens
 src/components/     shared UI, including the side-by-side board
-src/lib/            pure rules (proposals, invite codes, scheduling), data access,
-                    server actions, Supabase clients
+src/lib/            pure rules (proposals, invite codes, scheduling, day boundaries,
+                    scoring), data access, server actions, Supabase clients
 supabase/migrations schema, Row Level Security policies, and the rule functions
+.github/workflows   the daily maintenance job
 tests/unit          Vitest
 tests/db            SQL rule checks
 tests/e2e           Playwright
@@ -100,5 +109,17 @@ Two things worth knowing before changing anything:
    approving all go through `SECURITY DEFINER` functions, so partner approval cannot be
    skipped by calling the API directly. Add a rule there first, then mirror it in
    `src/lib/` for the UI.
-2. **Colours live in `src/app/tokens.css` only.** No component hard-codes one. The
-   visual direction is being chosen separately, so that file is meant to be replaceable.
+2. **Colours live in `src/app/tokens.css` only.** No component hard-codes one. Rose is
+   always you and violet is always your partner, on every screen.
+3. **A day rolls over at the couple's agreed end-of-day time, not at midnight.** Never use
+   the calendar date for anything a partner logs — use `activeLocalDate()` in TypeScript or
+   `couple_active_date()` in SQL.
+
+## Going live
+
+Nothing here is deployed yet. When it is, the Supabase free tier is far more than two
+people need — the largest table grows by roughly 2 MB a year against a 500 MB limit. The
+one catch is that free projects pause after a week with no activity;
+`.github/workflows/maintenance.yml` runs daily and keeps the project awake as a side
+effect of doing its real work. It needs two repository secrets, documented at the top of
+that file.

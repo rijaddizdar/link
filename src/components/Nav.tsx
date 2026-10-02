@@ -26,6 +26,7 @@ export function Nav({
   const tabs = linked
     ? [
         { href: '/', label: 'Today', icon: '⌂' },
+        { href: '/calendar', label: 'Calendar', icon: '▦' },
         { href: '/tasks', label: 'Tasks', icon: '☰' },
         { href: '/proposals', label: 'Approvals', icon: '✓', badge: waitingOnMe },
         { href: '/settings', label: 'Settings', icon: '⚙' },
@@ -68,7 +69,11 @@ export function Nav({
               >
                 <span aria-hidden="true">{tab.icon}</span>
                 {tab.label}
-                {tab.badge ? ` (${tab.badge})` : ''}
+                {tab.badge ? (
+                  <span className="l-tab-dot" aria-label={`${tab.badge} waiting`}>
+                    {tab.badge}
+                  </span>
+                ) : null}
               </Link>
             ),
           )}

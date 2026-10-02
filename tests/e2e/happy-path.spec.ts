@@ -48,9 +48,12 @@ test('two partners link, agree a task, and each log their own day', async ({ bro
   await sam.getByRole('button', { name: 'Link us up' }).click();
   await expect(sam.getByRole('heading', { name: 'Today' })).toBeVisible();
   await expect(sam.getByText('Alex')).toBeVisible();
-  // The zone and the end-of-day time chosen at linking are now the couple's.
-  await expect(sam.getByText('Europe/Berlin')).toBeVisible();
+  // The end-of-day time chosen at linking is now the couple's, and Today counts
+  // down to it rather than naming the zone.
   await expect(sam.getByText('Day ends at')).toContainText('10:30 PM');
+  await sam.goto('/settings');
+  await expect(sam.getByLabel('Time zone')).toHaveValue('Europe/Berlin');
+  await sam.goto('/');
 
   // --- one partner proposes a task -----------------------------------------
   await alex.goto('/tasks/new');

@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import { CompletionControl } from './CompletionControl';
 import { PartnerProgress } from './PartnerProgress';
+import { ChallengeControls } from './ChallengeControls';
 import { scheduleLabel } from '@/lib/schedule';
-import { WEEKDAY_LABELS, type Profile, type TaskWithProgress } from '@/lib/types';
+import {
+  WEEKDAY_LABELS,
+  type CompletionChallenge,
+  type Profile,
+  type TaskWithProgress,
+} from '@/lib/types';
 
 /**
  * The shared list for one day.
@@ -19,11 +25,13 @@ export function TaskBoard({
   me,
   partner,
   localDate,
+  challenges = [],
 }: {
   items: TaskWithProgress[];
   me: Profile;
   partner: Profile | null;
   localDate: string;
+  challenges?: CompletionChallenge[];
 }) {
   const partnerName = partner?.display_name || 'Your partner';
 
@@ -53,7 +61,12 @@ export function TaskBoard({
       </div>
 
       <ul className="l-list">
-        {items.map(({ task, mine, theirs }) => (
+        {items.map(({ task, mine, theirs }) => {
+          const openChallenge =
+            challenges.find((c) => c.task_id === task.id && c.status === 'open') ?? null;
+          const challengeIsAboutMe = openChallenge?.challenged_user_id === me.id;
+
+          return (
           <li key={task.id} className="l-task" data-testid="task-row">
             <div className="l-task-body">
               <div className="l-task-title">
@@ -75,8 +88,22 @@ export function TaskBoard({
 
             <CompletionControl task={task} completion={mine} localDate={localDate} />
             <PartnerProgress task={task} completion={theirs} partnerName={partnerName} />
+
+            {(openChallenge || theirs) && (
+              <div className="l-task-aside">
+                <ChallengeControls
+                  task={task}
+                  localDate={localDate}
+                  challenge={openChallenge}
+                  isMine={challengeIsAboutMe}
+                  partnerName={partnerName}
+                  canAsk={theirs !== null}
+                />
+              </div>
+            )}
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <Link href="/tasks/new" className="l-add-task">

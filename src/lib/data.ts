@@ -1,7 +1,10 @@
 import { createClient } from './supabase/server';
-import { coupleLocalDate, tasksScheduledOn } from './schedule';
+import { tasksScheduledOn } from './schedule';
+import { activeLocalDate, addDays, msUntilDayCloses } from './day';
 import type {
+  CompletionChallenge,
   Couple,
+  DayResult,
   Profile,
   Task,
   TaskCompletion,
@@ -40,8 +43,13 @@ export type CoupleContext = {
   couple: Couple;
   me: Profile;
   partner: Profile | null;
-  /** Today in the couple's time zone, YYYY-MM-DD. */
-  today: string;
+  /**
+   * The day the couple is logging into right now. The agreed end-of-day time,
+   * not midnight, is the rollover — so this can already be tomorrow's date.
+   */
+  activeDate: string;
+  /** How long is left before the current day closes. */
+  msLeft: number;
 };
 
 /**
@@ -77,11 +85,14 @@ export async function getCoupleContext(session: Session): Promise<CoupleContext 
     partner = data ?? null;
   }
 
+  const activeDate = activeLocalDate(couple.time_zone, couple.day_end_time);
+
   return {
     couple,
     me: session.profile,
     partner,
-    today: coupleLocalDate(couple.time_zone),
+    activeDate,
+    msLeft: msUntilDayCloses(couple.time_zone, couple.day_end_time, activeDate),
   };
 }
 
@@ -143,4 +154,62 @@ export async function getProposals(): Promise<TaskProposal[]> {
     .select('*')
     .order('created_at', { ascending: false });
   return (data ?? []) as TaskProposal[];
+}
+
+
+/**
+ * Settles every day that has closed since anyone last looked. Called before any
+ * screen that shows results, so the app is correct with no scheduled job at all;
+ * the job in .github/workflows is only a backstop.
+ */
+export async function settleDueDays(coupleId: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase.rpc('settle_due_days', { p_couple_id: coupleId, p_max_days: 60 });
+}
+
+export async function getDayResults(from: string, to: string): Promise<DayResult[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('day_results')
+    .select('*')
+    .gte('local_date', from)
+    .lte('local_date', to)
+    .order('local_date', { ascending: false });
+  return (data ?? []) as DayResult[];
+}
+
+export async function getDayResult(localDate: string): Promise<DayResult | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('day_results')
+    .select('*')
+    .eq('local_date', localDate)
+    .maybeSingle();
+  return (data as DayResult | null) ?? null;
+}
+
+/** The most recent settled day, for the "yesterday finished" card on Today. */
+export async function getLatestDayResult(): Promise<DayResult | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('day_results')
+    .select('*')
+    .order('local_date', { ascending: false })
+    .limit(1);
+  return (data?.[0] as DayResult | undefined) ?? null;
+}
+
+/** Enough history for the streak to be counted without loading everything. */
+export async function getRecentDayResults(activeDate: string): Promise<DayResult[]> {
+  return getDayResults(addDays(activeDate, -400), activeDate);
+}
+
+export async function getChallenges(localDate: string): Promise<CompletionChallenge[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('completion_challenges')
+    .select('*')
+    .eq('local_date', localDate)
+    .order('created_at', { ascending: false });
+  return (data ?? []) as CompletionChallenge[];
 }

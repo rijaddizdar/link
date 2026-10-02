@@ -341,3 +341,61 @@ export async function setCompletionAction(
   refreshAll();
   return ok;
 }
+
+
+// ---------------------------------------------------------------------------
+// Challenges
+//
+// Logs are trusted, so asking about one never removes it. Only the partner who
+// logged it can clear it, by conceding.
+// ---------------------------------------------------------------------------
+
+export async function raiseChallengeAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('raise_challenge', {
+    p_task_id: String(formData.get('task_id') ?? ''),
+    p_local_date: String(formData.get('local_date') ?? ''),
+    p_reason: String(formData.get('reason') ?? '').slice(0, 500),
+  });
+  if (error) return fail(error, 'Could not ask about that.');
+  refreshAll();
+  return ok;
+}
+
+async function resolveChallenge(
+  rpc: 'concede_challenge' | 'stand_by_log' | 'withdraw_challenge',
+  formData: FormData,
+  fallback: string,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc(rpc, {
+    p_id: String(formData.get('challenge_id') ?? ''),
+  });
+  if (error) return fail(error, fallback);
+  refreshAll();
+  return ok;
+}
+
+export async function concedeChallengeAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  return resolveChallenge('concede_challenge', formData, 'Could not clear that log.');
+}
+
+export async function standByLogAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  return resolveChallenge('stand_by_log', formData, 'Could not keep that log.');
+}
+
+export async function withdrawChallengeAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  return resolveChallenge('withdraw_challenge', formData, 'Could not take that back.');
+}

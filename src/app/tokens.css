@@ -1,0 +1,107 @@
+/*
+ * Link design tokens — direction "D · Bold Modern", the look the captain locked in.
+ *
+ * The whole system is six colours, two fonts and seven shape values. Components
+ * reference these variables and never hard-code a value.
+ *
+ * Mood: confident and graphic. Electric rose and violet on warm paper, thick
+ * black outlines, hard offset shadows, tight uppercase micro-labels and very
+ * large numbers.
+ *
+ * THE RULE THAT MATTERS MOST: rose is always you, violet is always your partner.
+ * Never swap them, and never use either colour for anything else.
+ */
+
+:root {
+  /* --- colour ------------------------------------------------------------ */
+  --bg: #f2efe9;          /* warm paper, app background */
+  --surface: #ffffff;     /* cards, rows, sheets */
+  --surface-2: #ede8df;   /* putty, quiet panels and chips */
+  --ink: #141019;         /* text AND every outline — the same value in D */
+  --muted: #6c6676;       /* secondary text, inactive tabs */
+  --primary: #ff2d6f;     /* electric rose — ALWAYS you */
+  --primary-ink: #ffffff; /* text on rose */
+  --partner: #4b30d6;     /* electric violet — ALWAYS your partner */
+  --partner-ink: #ffffff;
+  --accent: #c9f03a;      /* lime — approvals, celebration, selected option */
+  --good: #148f5e;
+  --danger: #c01648;
+
+  /* Semantic aliases for the two people, so components read as what they mean. */
+  --mine: var(--primary);
+  --mine-ink: var(--primary-ink);
+  --theirs: var(--partner);
+  --theirs-ink: var(--partner-ink);
+
+  /*
+   * Task colours. D's own palette is deliberately tiny (rose, violet, lime), so
+   * a task's colour is carried by a small rounded-square marker beside its name
+   * rather than by a whole surface — the row stays white with a black outline,
+   * as the direction requires. Flat saturated fills, in keeping with D.
+   */
+  --task-blush: #ff2d6f;
+  --task-coral: #ff6b35;
+  --task-plum: #8b2fb8;
+  --task-rose: #f2548a;
+  --task-berry: #b5114f;
+  --task-peach: #ffb03a;
+  --task-lilac: #7b5cf0;
+  --task-mint: #15a97a;
+
+  /* --- shape ------------------------------------------------------------- */
+  --radius: 12px;         /* cards, sheets, score strips */
+  --radius-sm: 8px;       /* rows, inputs, tick boxes */
+  --pill: 8px;            /* in D nothing is a circle — rounded squares only */
+  --btn-radius: 10px;
+  --chip-radius: 7px;
+  --border-width: 2px;
+  --border: var(--border-width) solid var(--ink);
+  --shadow: 4px 4px 0 var(--ink);      /* hard offset, never a blur */
+  --shadow-row: 2px 2px 0 var(--ink);
+  --shadow-btn: 3px 3px 0 var(--ink);
+
+  /* The tick box and counter box are one fixed size, so the two completion
+     columns line up down the whole list. That alignment is what makes
+     "mine next to theirs" readable at a glance. */
+  --box: 40px;
+  --box-radius: 9px;
+  --box-desktop: 78px;
+
+  /* --- type -------------------------------------------------------------- */
+  /* Loaded by next/font in src/app/layout.tsx, which sets these two variables. */
+  --font-display: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
+  --font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --display-ls: -0.03em;
+  --label-ls: 0.1em;
+  --label-tt: uppercase;
+
+  --fs-micro: 0.66rem;    /* uppercase micro-labels */
+  --fs-xs: 0.78rem;
+  --fs-sm: 0.88rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.32rem;
+  --fs-xl: 1.7rem;
+  --fs-2xl: 2.3rem;
+  --fs-num: 2.5rem;       /* the deliberately oversized numbers */
+
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semi: 600;
+  --fw-bold: 700;
+
+  --lh-body: 1.45;
+
+  /* --- space ------------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+
+  --focus-ring: 0 0 0 3px var(--accent);
+
+  --sidebar-width: 226px;
+  --page-max: 60rem;
+}

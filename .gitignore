@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# next
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# env — never commit real keys, .env.example is the only committed one
+.env
+.env.local
+.env.*.local
+
+# tests
+playwright-report/
+test-results/
+.playwright/
+
+# supabase local stack
+supabase/.temp/
+supabase/.branches/
+
+# os / editors
+.DS_Store
+*.log

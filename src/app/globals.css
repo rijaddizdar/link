@@ -158,7 +158,20 @@ a:hover { text-decoration: underline; }
 
 /* Desktop: the tab bar becomes a left sidebar. */
 @media (min-width: 60rem) {
-  .l-app { grid-template-columns: var(--sidebar-width) minmax(0, 1fr); }
+  .l-app {
+    grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+    /* The nav itself is sticky and only one viewport tall, so paint the sidebar
+       column on the frame instead — otherwise the panel visibly stops partway
+       down a long page. */
+    background:
+      linear-gradient(
+          to right,
+          var(--surface) 0 var(--sidebar-width),
+          var(--ink) var(--sidebar-width) calc(var(--sidebar-width) + var(--border-width)),
+          transparent calc(var(--sidebar-width) + var(--border-width))
+        )
+        no-repeat;
+  }
 
   .l-topbar {
     grid-column: 1 / -1;
@@ -177,8 +190,8 @@ a:hover { text-decoration: underline; }
     gap: var(--space-1);
     height: 100dvh;
     border-top: 0;
-    border-right: var(--border);
     padding: var(--space-4) var(--space-3);
+    background: transparent;
   }
 
   .l-tab {

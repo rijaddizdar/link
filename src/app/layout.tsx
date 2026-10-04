@@ -24,6 +24,8 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Link',
   description: 'A shared daily list for two.',
+  // Private: no search engine should list even the password page.
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {

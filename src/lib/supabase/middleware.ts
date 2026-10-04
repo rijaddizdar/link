@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { supabaseEnv } from './env';
 
-const PUBLIC_PATHS = ['/login', '/auth'];
+// Reachable without a Supabase session. /unlock sits in front of everything,
+// including sign-in, so it has to be here too.
+const PUBLIC_PATHS = ['/unlock', '/login', '/auth'];
 
 /** Refreshes the auth cookie and keeps signed-out visitors on /login. */
 export async function updateSession(request: NextRequest) {

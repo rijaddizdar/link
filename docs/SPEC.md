@@ -12,6 +12,18 @@ All of v1 is now built. What remains is listed in section 10.
 
 ---
 
+## 0. Privacy: a shared site password
+
+- **[v1]** Added at the captain's request: one shared password in front of the whole site.
+  Until it is entered, every path redirects to a password page that says nothing about what
+  is behind it — not even the sign-in page is reachable.
+- **[v1]** Once entered, the device remembers it for as long as browsers allow (400 days).
+- **[v1]** The password lives only in the `SITE_PASSWORD` environment variable, never in the
+  repository, which is public. The browser keeps a token derived from it, not the password.
+- **[v1]** If no password is configured, the site stays locked: it fails closed.
+- **[v1]** This is a privacy curtain, not the main lock. Each person still signs in to their
+  own account, and Row Level Security still decides what each account can see.
+
 ## 1. Accounts and linking
 
 - **[v1]** Each person has their own account (email and password, via Supabase Auth).

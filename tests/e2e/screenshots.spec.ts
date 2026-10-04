@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import {
+  unlock,
   backdateCouple,
   coupleDates,
   createAccount,
@@ -48,9 +49,13 @@ test('capture the main screens', async ({ browser }) => {
   const alex = await alexContext.newPage();
   const sam = await samContext.newPage();
 
-  // Sign-in screen, before any account exists in this context.
+  // The password page — the first thing anyone sees — then sign-in behind it.
   const fresh = await browser.newContext();
   const freshPage = await fresh.newPage();
+  await freshPage.goto('/');
+  await expect(freshPage.getByRole('button', { name: 'Enter' })).toBeVisible();
+  await shoot(freshPage, '00-password');
+  await unlock(freshPage);
   await freshPage.goto('/login');
   await shoot(freshPage, '01-sign-in');
   await fresh.close();

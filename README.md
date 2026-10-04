@@ -10,6 +10,8 @@ The full agreed product spec, including what this repo does **not** do yet, is i
 
 ## What works today
 
+- **A shared site password** in front of everything. Nothing — not even the sign-in page —
+  loads until it is entered, and each device remembers it, so you type it once.
 - Accounts, sign-up and sign-in.
 - Linking with a one-time code. The couple's shared **time zone** and **end-of-day time**
   are both agreed during that setup.
@@ -54,12 +56,15 @@ down; `npm run db:reset` rebuilds the database from the migrations.
 
 ### Environment
 
-Only two values are needed, both public:
-
 | Variable | What it is |
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | `http://127.0.0.1:54321` for the local stack |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the anon key `supabase start` prints |
+| `SITE_PASSWORD` | the shared password in front of the whole site |
+
+`SITE_PASSWORD` is **server-only** and must never be renamed with a `NEXT_PUBLIC_` prefix —
+that would bake it into the JavaScript every visitor downloads. If it is not set, the site
+stays locked for everyone: it fails closed, never open.
 
 **Never commit real keys.** `.env.example` is the only env file in git; every
 `.env*.local` is gitignored. This repository is public.
@@ -117,7 +122,10 @@ Two things worth knowing before changing anything:
 
 ## Going live
 
-Nothing here is deployed yet. When it is, the Supabase free tier is far more than two
+Nothing here is deployed yet. When it is, set `SITE_PASSWORD` in the host's environment
+variables (Vercel: Project → Settings → Environment Variables) to the same password you use
+locally. Changing it later signs every device out of the gate until the new one is entered.
+ When it is, the Supabase free tier is far more than two
 people need — the largest table grows by roughly 2 MB a year against a 500 MB limit. The
 one catch is that free projects pause after a week with no activity;
 `.github/workflows/maintenance.yml` runs daily and keeps the project awake as a side

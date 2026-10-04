@@ -23,6 +23,11 @@ export function Nav({
 }) {
   const pathname = usePathname();
 
+  // The password page shows nothing of the app behind it.
+  if (pathname === '/unlock') {
+    return <main className="l-main">{children}</main>;
+  }
+
   const tabs = linked
     ? [
         { href: '/', label: 'Today', icon: '⌂' },

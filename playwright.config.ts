@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_SITE_PASSWORD } from './tests/e2e/site-password';
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const BASE_URL = `http://127.0.0.1:${PORT}`;
@@ -29,5 +30,8 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    // A throwaway password for the site gate, so the real one never appears in
+    // the repo. A real environment variable beats .env.local in Next.js.
+    env: { SITE_PASSWORD: E2E_SITE_PASSWORD },
   },
 });

@@ -38,6 +38,11 @@ things those two do not already make obvious.
   migration has to `revoke all ... from anon, authenticated` before granting what it means
   to allow, or the table is writable by any signed-in user.
 
+- **A shared site password sits in front of everything** (`src/lib/gate.ts`, applied first in
+  `src/middleware.ts`). It is read from `SITE_PASSWORD` and must never be committed or given
+  a `NEXT_PUBLIC_` prefix — the repo is public. Any new route is gated automatically; only
+  `/unlock` is exempt.
+
 ## Testing
 
 Three suites, all in `README.md`. `npm run test:db` and `npm run test:e2e` need
@@ -49,6 +54,11 @@ In the SQL suites, keep a side effect and the assertion that reads it in **separ
 statements** — Postgres does not guarantee evaluation order within one expression. Temp
 tables created while acting as the owner also need an explicit `grant select ... to
 authenticated` before the tests can read them back as a user.
+
+Playwright starts the dev server with a throwaway `SITE_PASSWORD` from
+`tests/e2e/site-password.ts`, and `createAccount()` gets each browser context through the
+gate first. A dev server already running on port 3100 with a different password will make
+every test fail at the gate — stop it first.
 
 Playwright tests that need history use the service_role key, read from the running stack by
 `serviceRoleKey()` in `tests/e2e/helpers.ts` rather than committed. Use `agreeTask()` rather

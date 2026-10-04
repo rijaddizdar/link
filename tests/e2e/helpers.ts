@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { E2E_SITE_PASSWORD } from './site-password';
 
 /** A fresh email per run, so repeated runs do not collide in the local auth table. */
 export function uniqueEmail(label: string): string {
@@ -7,7 +8,20 @@ export function uniqueEmail(label: string): string {
 
 export const PASSWORD = 'link-test-password';
 
+/**
+ * Gets this browser context past the site password. The gate cookie lasts, so
+ * every later page in the same context goes straight through.
+ */
+export async function unlock(page: Page): Promise<void> {
+  await page.goto('/unlock');
+  if (!page.url().includes('/unlock')) return; // already unlocked
+  await page.getByLabel('Password').fill(E2E_SITE_PASSWORD);
+  await page.getByRole('button', { name: 'Enter' }).click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/unlock'));
+}
+
 export async function createAccount(page: Page, name: string, email: string): Promise<void> {
+  await unlock(page);
   await page.goto('/login');
   await page.getByRole('button', { name: 'Create account' }).first().click();
   await page.getByLabel('Your name').fill(name);

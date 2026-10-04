@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient } from './supabase/server';
 import { normalizeInviteCode } from './invite-code';
+import { EMAIL_CONFIRMATION_REQUIRED, signInErrorMessage } from './auth-messages';
 import { TASK_COLORS, type IsoWeekday, type TaskColor, type TaskDraft } from './types';
 
 /** Every form action returns this shape; `error` is shown next to the form. */
@@ -36,12 +37,16 @@ export async function signUp(_prev: ActionResult, formData: FormData): Promise<A
   if (password.length < 6) return { error: 'Use at least 6 characters for the password.' };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { display_name: displayName || email.split('@')[0] } },
   });
   if (error) return fail(error, 'Could not create that account.');
+
+  // No session means Supabase wants the email confirmed first. Without saying
+  // so, the redirect below would just land back on this form with no clue why.
+  if (!data.session) return { error: EMAIL_CONFIRMATION_REQUIRED };
 
   refreshAll();
   redirect('/');
@@ -53,7 +58,7 @@ export async function signIn(_prev: ActionResult, formData: FormData): Promise<A
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: 'That email and password do not match an account.' };
+  if (error) return { error: signInErrorMessage(error.message) };
 
   refreshAll();
   redirect('/');
